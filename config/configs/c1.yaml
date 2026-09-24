@@ -1,0 +1,4 @@
+# C1: solo guardrail de entrada (sobre el mensaje del usuario, resultados de herramientas y descripciones).
+name: C1
+description: Solo guardrail de entrada (Prompt Guard 2)
+controls: {input_guard: true, tool_result_guard: true, output_filter: false, policy: false}

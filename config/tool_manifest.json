@@ -1,0 +1,11 @@
+{
+  "buscar_clientes": "c550f0266e40f0faa345dd14b94a10258ccb84353951530a9e1859591c7811bf",
+  "buscar_contratos": "c6f644f4009c8d0c0bf58693ab365c883f6a67bb24cb952d57c622db65cac68f",
+  "consultar_secretos": "df03298def790b78b5a532a37c4e13cfd888b438f31f9802a251cc9b341bb4c8",
+  "convertir_divisa": "05a5f75056a010affe6cfb2c475a14aa8890f07416ab663aeb27b7d5a00b107f",
+  "enviar_email": "e223d4193ffe18dc663d2b49c15ee37e81dbd7e6f7ce2b097e283e39b16b2db8",
+  "http_fetch": "92ffc8e0f63d41c69d3e753a3b08871e370ac453793f1a7ce54951b568c7ea4d",
+  "leer_contrato": "1662ab6116caee1b884822f72b0ca7565ac6498b45df6cad4486050d286bb24f",
+  "obtener_cliente": "e61abcb66fa8dd72b91b85a0f1ca4d29132072cbc1c526cb43e39ec7bee24746",
+  "obtener_credencial": "f28868888f33c9749587b5bc18b076578c8f7b22ab7344b913b9e41ae0926ec1"
+}

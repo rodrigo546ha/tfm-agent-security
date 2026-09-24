@@ -1,0 +1,25 @@
+flowchart LR
+    U[Usuario/analista] -->|mensaje| G1{Guardrail<br/>entrada}
+    DOC[(Documentos)] -.dato.-> TR
+    WEB[Web/intranet] -.dato.-> TR
+    MCP[Herramienta<br/>de terceros] -.descripcion.-> PIN{Pinning<br/>manifiesto}
+    G1 -->|limpio| LLM[Modelo LLM<br/>Ollama]
+    PIN -->|verificada| LLM
+    LLM -->|tool_call| POL{Motor de<br/>politicas}
+    POL -->|autorizada| T[Herramientas<br/>internas]
+    T --> DB[(CRM SQLite<br/>+ secretos)]
+    T --> VA[Broker de<br/>credenciales]
+    T --> EG[Gateway de egress<br/>sumidero]
+    T -->|resultado| TR{Guardrail<br/>resultado}
+    TR --> LLM
+    LLM -->|respuesta| FO{Filtro de<br/>salida DLP}
+    FO --> U
+    EG -.captura.-> SINK[(Evidencias<br/>egress)]
+
+    subgraph confianza [Zona de confianza]
+        LLM
+        POL
+        T
+        DB
+        VA
+    end

@@ -1,0 +1,4 @@
+# C0: línea base sin controles.
+name: C0
+description: Sin controles
+controls: {input_guard: false, tool_result_guard: false, output_filter: false, policy: false}

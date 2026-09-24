@@ -1,0 +1,41 @@
+# Motor de políticas (solo activo en C2). Cada bloque es un control de la arquitectura de referencia.
+roles:
+  analista:
+    # Mínimo privilegio: consultar_secretos NO está en la allowlist del rol.
+    tools:
+      - buscar_clientes
+      - obtener_cliente
+      - leer_contrato
+      - buscar_contratos
+      - http_fetch
+      - enviar_email
+      - obtener_credencial
+      - convertir_divisa
+    # Minimización de datos: campos que nunca llegan al modelo.
+    mask_fields:
+      obtener_cliente: [iban, dni, notas]
+
+egress:
+  # Allowlist de destinos para http_fetch.
+  allow_domains: [intranet.lab, docs.lab]
+
+email:
+  allow_recipient_domains: [empresa.lab]
+
+credentials:
+  # Broker: el modelo recibe un handle cred://<servicio>/<id>; el gateway lo resuelve solo hacia destinos permitidos.
+  broker: true
+  ttl_seconds: 300
+  allowed_destinations:
+    crm: [intranet.lab]
+
+hitl:
+  # Herramientas con confirmación humana. En campañas se usa un aprobador automático "estricto" que
+  # deniega si el destino está fuera de allowlist o el contenido contiene datos sensibles.
+  tools: [enviar_email]
+  approver: strict
+
+tool_integrity:
+  # Pinning de descripciones: una herramienta cuya descripción no coincide con el hash del manifiesto
+  # (config/tool_manifest.json) no se registra. Mitiga el envenenamiento de descripciones (AML.T0099 / ASI04).
+  enforce_manifest: true

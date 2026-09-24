@@ -1,0 +1,23 @@
+# Opcional. En macOS Apple Silicon, Ollama en contenedor NO usa la GPU (Metal): para las campañas del TFM
+# se ejecuta Ollama NATIVO en el host. Este compose sirve solo para (a) reproducir en Linux/VM con CPU,
+# o (b) levantar servicios auxiliares. El agente apunta a OLLAMA_HOST.
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports: ["11434:11434"]
+    volumes: ["ollama:/root/.ollama"]
+    # GPU solo en Linux con NVIDIA; en Mac se ignora y va por CPU.
+
+  lab:
+    build: .
+    depends_on: [ollama]
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      TFM_MODEL: ${TFM_MODEL:-qwen3:8b}
+    volumes:
+      - ./results:/app/results
+      - ./data/generated:/app/data/generated
+    command: ["make", "reproduce"]
+
+volumes:
+  ollama:

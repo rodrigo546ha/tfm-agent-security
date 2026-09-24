@@ -1,0 +1,45 @@
+[project]
+name = "tfm-agent-security"
+version = "0.1.0"
+description = "Laboratorio del TFM: arquitectura de seguridad de referencia para agentes LLM con herramientas (MITRE ATLAS / OWASP ASI)."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Rodrigo Hernández" }]
+requires-python = ">=3.11"
+dependencies = [
+    "ollama>=0.5",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "pyyaml>=6.0",
+    "faker>=30.0",
+    "pandas>=2.2",
+    "matplotlib>=3.9",
+]
+
+[project.optional-dependencies]
+# Guardrail de entrada (Llama Prompt Guard 2 86M o deberta-v3 de ProtectAI). CPU es suficiente.
+guard = ["transformers>=4.45", "torch>=2.4"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+tfm-lab = "tfm_lab.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tfm_lab"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

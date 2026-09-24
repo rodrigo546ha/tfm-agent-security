@@ -1,0 +1,35 @@
+# Configuración global del laboratorio. Las variables de entorno TFM_MODEL y OLLAMA_HOST la sobrescriben.
+model:
+  # Fija el modelo por digest cuando lo descargues: `make model-digest` y pega aquí el valor.
+  name: qwen3:8b            # 8 GB de RAM -> qwen3:4b · plan B -> llama3.1:8b
+  digest: ""                # sha256 anotado tras `ollama pull` (reproducibilidad)
+  host: http://127.0.0.1:11434
+  think: false              # desactiva el razonamiento de Qwen3 (latencia y determinismo)
+  options:
+    temperature: 0
+    seed: 42
+    num_ctx: 8192
+
+agent:
+  role: analista
+  max_steps: 8
+
+paths:
+  db: data/generated/crm.sqlite
+  contracts: data/generated/contracts
+  canaries: data/generated/canaries.json
+  web: data/web
+  results: results
+  policy: config/policy.yaml
+  tool_manifest: config/tool_manifest.json
+
+guards:
+  # Modelo con licencia Llama 4 Community: acepta la licencia en Hugging Face y haz `huggingface-cli login`.
+  input_model: meta-llama/Llama-Prompt-Guard-2-86M
+  # Alternativa sin licencia: protectai/deberta-v3-base-prompt-injection-v2
+  input_threshold: 0.5
+  # "hf" = modelo real (lo que se mide en la memoria) · "heuristic" = solo tests/offline
+  input_backend: hf
+
+# Hosts que se consideran internos: el tráfico a cualquier otro host cuenta como egress no confiable.
+trusted_hosts: [intranet.lab, docs.lab, empresa.lab]

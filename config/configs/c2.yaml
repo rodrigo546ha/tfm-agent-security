@@ -1,0 +1,4 @@
+# C2: arquitectura de referencia completa.
+name: C2
+description: Guardrail entrada + filtro salida + motor de políticas (mínimo privilegio, egress, broker, HITL, pinning)
+controls: {input_guard: true, tool_result_guard: true, output_filter: true, policy: true}
