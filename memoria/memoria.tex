@@ -147,9 +147,9 @@ Se acompaña de la tasa de bloqueo de tareas legítimas (falsos positivos sobre 
 % ~3 caras. Descripción del agente objetivo y sus herramientas. DFD con límites de confianza (figura).
 % Matriz de amenazas priorizada mapeada a ATLAS/ASI (tabla). Este es el capítulo con más peso.
 \begin{figure}[h]\centering
-% \includegraphics[width=0.85\textwidth]{figuras/dfd.png} % exporta docs/threat-model/dfd.mmd a PNG
-\fbox{\parbox{0.8\textwidth}{\centering\vspace{1.5cm}[Figura: diagrama de flujo de datos con límites de
-confianza — exportar \texttt{docs/threat-model/dfd.mmd}]\vspace{1.5cm}}}
+\IfFileExists{figuras/dfd.png}{\includegraphics[width=0.9\textwidth]{figuras/dfd.png}}{%
+\fbox{\parbox{0.8\textwidth}{\centering\vspace{1.5cm}[Exporta \texttt{docs/threat-model/dfd.mmd} a
+\texttt{figuras/dfd.png}]\vspace{1.5cm}}}}
 \caption{Diagrama de flujo de datos del agente y sus límites de confianza.}\label{fig:dfd}
 \end{figure}
 
@@ -162,8 +162,8 @@ ID & STRIDE & ATLAS & ASI & Control principal \\
 T1 & Tampering/EoP & AML.T0051 & ASI01 & Guardrail de entrada \\
 T2 & Tampering & AML.T0051 & ASI01/06 & Guardrail sobre resultados de herramientas \\
 T3 & Spoofing & AML.T0099 & ASI04 & Pinning de manifiesto de herramientas \\
-T4 & Info. disclosure & AML.T0055 & ASI03 & Broker de credenciales + mínimo privilegio \\
-T5 & Info. disclosure & AML.T0055 & ASI03 & Allowlist de egress + filtro de salida \\
+T4 & Info. disclosure & AML.T0098 & ASI03 & Broker de credenciales + mínimo privilegio \\
+T5 & Info. disclosure & AML.T0098 & ASI03 & Allowlist de egress + filtro de salida \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -178,19 +178,15 @@ T5 & Info. disclosure & AML.T0055 & ASI03 & Allowlist de egress + filtro de sali
 \label{sec:baseline}
 % ~3 caras. Detalle de S1-S4 con ejemplos de carga. Resultados en C0 (sin controles): tabla ASR y análisis.
 \begin{table}[h]\centering\small
-\caption{ASR (\%) por escenario y configuración (rellenar con \texttt{results/asr.csv}).}\label{tab:asr}
+\caption{ASR por escenario y configuración (éxitos/intentos). Generada por \texttt{make report}.}\label{tab:asr}
+\IfFileExists{tablas/asr.tex}{\input{tablas/asr.tex}}{%
 \begin{tabular}{lccc}
 \toprule
 Escenario & C0 & C1 & C2 \\
 \midrule
-S1 — inyección directa & & & \\
-S2 — inyección indirecta & & & \\
-S3 — herramienta envenenada & & & \\
-S4 — robo de credenciales & & & \\
-\midrule
-Global & & & \\
+\multicolumn{4}{c}{\emph{Ejecuta \texttt{make report} para generar tablas/asr.tex}} \\
 \bottomrule
-\end{tabular}
+\end{tabular}}
 \end{table}
 
 \section{Arquitectura de seguridad de referencia}
@@ -203,9 +199,8 @@ Global & & & \\
 \label{sec:validacion}
 % ~2 caras. Resultados con controles (C1, C2). Reducción de ASR, coste en falsos positivos y latencia (figura).
 \begin{figure}[h]\centering
-% \includegraphics[width=0.8\textwidth]{figuras/asr.png} % results/asr.png
-\fbox{\parbox{0.8\textwidth}{\centering\vspace{1.2cm}[Figura: ASR por escenario y configuración —
-\texttt{results/asr.png}]\vspace{1.2cm}}}
+\IfFileExists{figuras/asr.png}{\includegraphics[width=0.85\textwidth]{figuras/asr.png}}{%
+\fbox{\parbox{0.8\textwidth}{\centering\vspace{1.2cm}[Ejecuta \texttt{make report memoria-figs}]\vspace{1.2cm}}}}
 \caption{Tasa de éxito de ataque por escenario y configuración.}\label{fig:asr}
 \end{figure}
 

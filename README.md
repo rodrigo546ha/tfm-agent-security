@@ -18,13 +18,15 @@ arquitectura de referencia propuesta.
 | S1 | Inyección directa de instrucciones | AML.T0051 | ASI01 |
 | S2 | Inyección indirecta vía documento | AML.T0051 | ASI01/ASI06 |
 | S3 | Envenenamiento de descripción de herramienta | AML.T0099 | ASI04 |
-| S4 | Robo de credenciales + exfiltración | AML.T0055 | ASI03 |
+| S4 | Robo de credenciales + exfiltración | AML.T0098 | ASI03 |
 
 Configuraciones: **C0** sin controles · **C1** solo guardrail de entrada · **C2** arquitectura completa
 (guardrail entrada + filtro de salida + motor de políticas: mínimo privilegio, allowlist de egress, broker de
 credenciales, confirmación humana, *pinning* de descripciones de herramientas).
 
-Métricas: **ASR** (attack success rate) por canario, **tasa de bloqueo de tareas legítimas** (50 tareas
+Variantes: S1 20 · S2 20 (contratos con carga del corpus) · S3 16 · S4 15 = 71 ataques por configuración.
+
+Métricas: **ASR** (attack success rate) por canario con IC de Wilson 95 %, **tasa de bloqueo de tareas legítimas** (50 tareas
 benignas) y **latencia**.
 
 ## Requisitos
@@ -53,7 +55,7 @@ cat results/asr.csv ; open results/asr.png
 Sin modelo instalado puedes validar todo el pipeline con datos scripted:
 
 ```bash
-make test                       # batería de tests (backend heurístico, sin descargas)
+make test                       # 15 tests (backend heurístico, sin descargas)
 python -m tfm_lab.cli campaign --dry-run
 ```
 
@@ -75,14 +77,15 @@ data/generated/    corpus sintético (regenerable)
 attacks/           corpus de ataques versionado
 promptfoo/         segunda fuente de medida (escenario 1)
 docs/              modelo de amenazas, ADRs, evidencias, guía de despliegue
-memoria/           fuente LaTeX de la memoria
+memoria/           fuente LaTeX de la memoria (tablas/asr.tex y figuras/ se generan con make report)
+.github/workflows/ CI: ruff + tests en cada push
 results/           runs.jsonl, summary.csv, asr.csv, asr.png (regenerable)
 ```
 
 ## Reproducibilidad
 
 Parámetros deterministas (`temperature=0`, `seed=42`, `num_ctx=8192`, `think=off`), corpus con `seed=42`,
-modelo fijado por digest, `uv.lock` + `requirements.txt`. Verificado en una VM limpia (ver
+modelo fijado por digest, `uv.lock` + `requirements.txt`. Se verifica en una VM limpia en la semana del 26 ene (ver
 `docs/deployment.md`). Detector de éxito por canario: sin juez LLM, veredicto reproducible.
 
 ## Licencia

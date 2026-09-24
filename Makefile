@@ -1,4 +1,4 @@
-.PHONY: help setup data manifest campaign campaign-fast report chat test lint clean model-digest reproduce
+.PHONY: help setup data manifest campaign campaign-fast report chat test lint clean model-digest reproduce memoria memoria-figs
 
 PY ?= python
 export PYTHONPATH := src
@@ -9,7 +9,7 @@ help:  ## Muestra esta ayuda
 setup:  ## Crea el entorno con uv e instala dependencias (incluye extra guard)
 	uv venv
 	uv sync --extra guard --extra dev
-	uv pip freeze > requirements.txt
+	uv export --no-hashes --no-dev --extra guard --format requirements-txt > requirements.txt
 
 data:  ## Genera el corpus sintético (CRM, contratos, canarios)
 	$(PY) -m tfm_lab.cli data
@@ -44,3 +44,9 @@ reproduce: data manifest campaign report  ## Pipeline completo reproducible de p
 clean:  ## Borra datos generados y resultados
 	rm -rf data/generated/* results/* .pytest_cache
 	find . -name __pycache__ -type d -prune -exec rm -rf {} +
+
+memoria-figs:  ## Copia las figuras de results/ a memoria/figuras/
+	mkdir -p memoria/figuras && cp results/asr.png memoria/figuras/asr.png
+
+memoria:  ## Compila la memoria LaTeX (memoria/memoria.pdf)
+	cd memoria && latexmk -pdf -interaction=nonstopmode memoria.tex

@@ -72,7 +72,7 @@ huggingface-cli login # pega tu token de HF
 
 Verifica que todo enciende **sin modelo** (no descarga nada):
 ```bash
-make test             # 11 tests deben pasar
+make test             # 15 tests deben pasar
 python -m tfm_lab.cli campaign --dry-run   # valida el pipeline entero
 ```
 
@@ -91,8 +91,9 @@ make campaign-fast
 # Campaña completa: C0/C1/C2 × S1–S4 + 50 tareas benignas  (~3–4 h según tu notas)
 make campaign
 
-# Tablas y gráfica
-make report
+# Tablas, gráfica y tabla LaTeX para la memoria
+make report memoria-figs
+make memoria          # compila memoria/memoria.pdf con los resultados reales
 open results/asr.png
 ```
 

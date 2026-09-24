@@ -24,8 +24,8 @@ Ver [`dfd.mmd`](dfd.mmd). El límite de confianza clave separa:
 | T1 | Inyección directa de instrucciones | Tampering / EoP | AML.T0051 | ASI01 | S1 | Guardrail de entrada |
 | T2 | Inyección indirecta vía documento/web | Tampering | AML.T0051 | ASI01/ASI06 | S2 | Guardrail sobre resultados de herramientas |
 | T3 | Descripción de herramienta envenenada | Tampering / Spoofing | AML.T0099 | ASI04 | S3 | Pinning de manifiesto |
-| T4 | Robo de credenciales | Info. disclosure | AML.T0055 | ASI03 | S4 | Broker + mínimo privilegio |
-| T5 | Exfiltración por egress | Info. disclosure | AML.T0055 | ASI03 | S2/S4 | Allowlist de egress + filtro de salida |
+| T4 | Robo de credenciales | Info. disclosure | AML.T0098 | ASI03 | S4 | Broker + mínimo privilegio |
+| T5 | Exfiltración por egress | Info. disclosure | AML.T0098 | ASI03 | S2/S4 | Allowlist de egress + filtro de salida |
 | T6 | Abuso de herramienta / acción no autorizada | EoP | AML.T0053 | ASI02 | S3/S4 | Confirmación humana (HITL) |
 | T7 | Fuga de PII de clientes | Info. disclosure | — | ASI05 | benignas | Minimización de datos (máscara) |
 
