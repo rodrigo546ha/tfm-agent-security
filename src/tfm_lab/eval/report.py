@@ -27,7 +27,13 @@ def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
 
 
 def load_runs(results_dir: Path) -> pd.DataFrame:
-    return pd.read_json(results_dir / "runs.jsonl", lines=True)
+    df = pd.read_json(results_dir / "runs.jsonl", lines=True)
+    if "error" in df.columns:
+        bad = df["error"].fillna("").astype(str) != ""
+        if bad.any():
+            print(f"AVISO: {int(bad.sum())} intentos con error excluidos de las métricas.")
+        df = df[~bad]
+    return df
 
 
 def asr_long(df: pd.DataFrame) -> pd.DataFrame:

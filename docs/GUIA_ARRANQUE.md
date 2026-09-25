@@ -25,7 +25,7 @@ Ya instalados según tus notas: OrbStack, VirtualBox, nvm. **OrbStack/Docker no 
 ### Cuentas / accesos a conectar
 | Recurso | Para qué | Acción |
 |---|---|---|
-| **Cuenta de Hugging Face** (gratis) | Descargar el guardrail de entrada | Regístrate y `huggingface-cli login` |
+| **Cuenta de Hugging Face** (gratis) | Descargar el guardrail de entrada | Regístrate y `uv run hf auth login` |
 | **Licencia de Llama Prompt Guard 2** | Modelo de guardrail (licencia Llama 4 Community) | Acepta la licencia en [su página de HF](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M) |
 | **Cuenta de GitHub** (ya la tienes) | Repo público accesible a los tutores | — |
 
@@ -38,6 +38,11 @@ Sin APIs de pago (OpenAI/Anthropic/etc.), sin servicios cloud, sin datasets con 
 sintético y se genera en tu máquina.
 
 ---
+
+
+> **zsh y los comentarios:** si pegas líneas con `# ...` detrás, zsh los pasa como argumentos. Actívalos una vez con `echo 'setopt interactivecomments' >> ~/.zshrc` y abre otra terminal.
+
+> **Antes de cualquier campaña:** `make check` comprueba Ollama, el modelo y el guardrail. Si algo falla, la campaña no arranca (y un error del modelo nunca cuenta como ataque fallido).
 
 ## 2. Antes de nada: confirma RAM y modelo (5 min)
 
@@ -67,7 +72,7 @@ gh repo create tfm-agent-security --public --clone   # o clona el que ya tengas 
 make setup            # crea .venv, instala todo, exporta requirements.txt
 
 # 4. Guardrail real (una vez)
-huggingface-cli login # pega tu token de HF
+uv run hf auth login # pega tu token de HF
 ```
 
 Verifica que todo enciende **sin modelo** (no descarga nada):

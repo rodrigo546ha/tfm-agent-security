@@ -20,6 +20,7 @@ def main(argv: list[str] | None = None) -> int:
     pc.add_argument("--dry-run", action="store_true", help="Sin modelo (backend scripted): valida el pipeline.")
 
     sub.add_parser("report", help="Genera tablas y gráficas de ASR desde results/.")
+    sub.add_parser("check", help="Comprueba Ollama, el modelo y el guardrail antes de una campaña.")
 
     pt = sub.add_parser("chat", help="Chat manual con el agente en una configuración.")
     pt.add_argument("--config", default="C2")
@@ -41,12 +42,24 @@ def main(argv: list[str] | None = None) -> int:
         write_manifest(build_registry(), path)
         print(f"Manifiesto -> {path}")
     elif args.cmd == "campaign":
-        from tfm_lab.eval.campaign import run_campaign
-        run_campaign(configs=args.configs, scenarios=args.scenarios,
-                     benign=not args.no_benign, dry_run=args.dry_run)
+        from tfm_lab.eval.campaign import PreflightError, run_campaign
+        try:
+            run_campaign(configs=args.configs, scenarios=args.scenarios,
+                         benign=not args.no_benign, dry_run=args.dry_run)
+        except PreflightError as exc:
+            print(f"✗ {exc}")
+            return 1
     elif args.cmd == "report":
         from tfm_lab.eval.report import main as rep
         rep()
+    elif args.cmd == "check":
+        from tfm_lab.eval.campaign import PreflightError, preflight
+        from tfm_lab.settings import load_settings
+        try:
+            print(preflight(load_settings(), ["C0", "C1", "C2"]))
+        except (PreflightError, RuntimeError) as exc:
+            print(f"✗ {exc}")
+            return 1
     elif args.cmd == "chat":
         _chat(args.config, args.message)
     return 0

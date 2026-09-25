@@ -24,7 +24,7 @@ paths:
   tool_manifest: config/tool_manifest.json
 
 guards:
-  # Modelo con licencia Llama 4 Community: acepta la licencia en Hugging Face y haz `huggingface-cli login`.
+  # Modelo con licencia Llama 4 Community: acepta la licencia en Hugging Face y haz `uv run hf auth login`.
   input_model: meta-llama/Llama-Prompt-Guard-2-86M
   # Alternativa sin licencia: protectai/deberta-v3-base-prompt-injection-v2
   input_threshold: 0.5

@@ -1,4 +1,4 @@
-.PHONY: help setup data manifest campaign campaign-fast report chat test lint clean model-digest reproduce memoria memoria-figs
+.PHONY: help check setup data manifest campaign campaign-fast report chat test lint clean model-digest reproduce memoria memoria-figs
 
 PY ?= uv run python
 export PYTHONPATH := src
@@ -17,11 +17,14 @@ data:  ## Genera el corpus sintético (CRM, contratos, canarios)
 manifest:  ## Genera el manifiesto de integridad de herramientas
 	$(PY) -m tfm_lab.cli manifest
 
-campaign: data manifest  ## Ejecuta la campaña completa (C0/C1/C2 × S1-S4 + benignas) con Ollama
+campaign: check data manifest  ## Ejecuta la campaña completa (C0/C1/C2 × S1-S4 + benignas) con Ollama
 	$(PY) -m tfm_lab.cli campaign
 
-campaign-fast: data manifest  ## Campaña rápida de humo (S1 y S4, C0 y C2)
+campaign-fast: check data manifest  ## Campaña rápida de humo (S1 y S4, C0 y C2)
 	$(PY) -m tfm_lab.cli campaign --configs C0 C2 --scenarios S1 S4
+
+check:  ## Comprueba Ollama, modelo y guardrail antes de una campaña
+	$(PY) -m tfm_lab.cli check
 
 report:  ## Genera tablas y gráfica de ASR desde results/
 	$(PY) -m tfm_lab.cli report

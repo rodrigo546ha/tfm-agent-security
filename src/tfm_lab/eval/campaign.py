@@ -89,6 +89,34 @@ def run_benign(llm, settings, cfg_name: str, task: str, idx: int, tel: Telemetry
             "steps": r.steps, "latency_s": r.latency_s, "error": r.error}
 
 
+class PreflightError(RuntimeError):
+    pass
+
+
+def preflight(settings: LabSettings, configs: list[str]) -> str:
+    """Comprueba Ollama, el modelo y el guardrail ANTES de lanzar nada. Devuelve un resumen."""
+    m = settings.model
+    try:
+        from ollama import Client
+        names = {x.model for x in Client(host=m["host"]).list().models}
+    except Exception as exc:  # noqa: BLE001
+        raise PreflightError(
+            f"No hay conexión con Ollama en {m['host']} ({type(exc).__name__}). "
+            "Instala Ollama (https://ollama.com/download), ábrelo y vuelve a intentarlo.") from exc
+    if m["name"] not in names and f"{m['name']}:latest" not in names:
+        raise PreflightError(f"El modelo '{m['name']}' no está descargado. Ejecuta: ollama pull {m['name']}")
+    needs_guard = any(load_run_config(c).on("input_guard") or load_run_config(c).on("tool_result_guard")
+                      for c in configs)
+    g = settings.guards
+    if needs_guard:
+        from tfm_lab.controls.input_guard import get_classifier
+        try:
+            get_classifier(g["input_backend"], g["input_model"], g["input_threshold"])  # descarga/carga una vez
+        except RuntimeError as exc:
+            raise PreflightError(str(exc)) from exc
+    return f"Ollama OK · modelo {m['name']} · guardrail {g['input_model'] if needs_guard else 'no requerido'}"
+
+
 def run_campaign(configs: list[str] | None = None, scenarios: list[str] | None = None,
                  benign: bool = True, dry_run: bool = False, n_benign: int = 50) -> Path:
     settings = load_settings()
@@ -98,6 +126,9 @@ def run_campaign(configs: list[str] | None = None, scenarios: list[str] | None =
     runs_path.write_text("", encoding="utf-8")
     tel = Telemetry(results / "telemetry.jsonl", run_id="campaign")
 
+    cfgs = configs or ["C0", "C1", "C2"]
+    if not dry_run:
+        print(preflight(settings, cfgs))
     llm: LLMBackend = (ScriptedBackend([{"content": "Hecho.", "tool_calls": []}]) if dry_run
                        else build_backend(settings.model))
     scens = [s for s in SCENARIOS if not scenarios or s.id in scenarios]
@@ -109,16 +140,29 @@ def run_campaign(configs: list[str] | None = None, scenarios: list[str] | None =
     rows: list[dict[str, Any]] = []
     t0 = time.time()
     with open(runs_path, "a", encoding="utf-8") as fh:
+        streak = 0
+
         def _write(row: dict) -> None:
+            nonlocal streak
+            if row.get("error"):
+                # Un error del modelo NO es un ataque fallido: se marca y se excluye de las métricas.
+                row["attack_success"] = None
+                streak += 1
+            else:
+                streak = 0
             rows.append(row)
             fh.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
             fh.flush()
+            if streak >= 3:
+                raise RuntimeError(f"3 errores seguidos del agente; último: {row['error']}. Campaña abortada.")
 
-        for cfg_name in configs or ["C0", "C1", "C2"]:
+        for cfg_name in cfgs:
             for s in scens:
                 for v in variants(s, settings):
                     _write(run_attack(llm, settings, cfg_name, s, v, tel.child(f"{cfg_name}:{v['id']}")))
-                    print(f"  {cfg_name} {v['id']:<28} éxito={rows[-1]['attack_success']}", flush=True)
+                    last = rows[-1]
+                    estado = f"ERROR {last['error'][:60]}" if last.get("error") else f"éxito={last['attack_success']}"
+                    print(f"  {cfg_name} {v['id']:<28} {estado}", flush=True)
             if benign:
                 for i, task in enumerate(tasks):
                     _write(run_benign(llm, settings, cfg_name, task, i, tel.child(f"{cfg_name}:B-{i:02d}")))

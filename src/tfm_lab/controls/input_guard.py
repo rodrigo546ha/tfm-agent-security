@@ -31,8 +31,15 @@ class HFClassifier:
         except ImportError as exc:  # pragma: no cover
             raise RuntimeError("Instala el extra de guardrail: `uv sync --extra guard`") from exc
         self.torch = torch
-        self.tokenizer = AutoTokenizer.from_pretrained(model_id)
-        self.model = AutoModelForSequenceClassification.from_pretrained(model_id).eval()
+        try:
+            self.tokenizer = AutoTokenizer.from_pretrained(model_id)
+            self.model = AutoModelForSequenceClassification.from_pretrained(model_id).eval()
+        except OSError as exc:
+            raise RuntimeError(
+                f"No se puede cargar el guardrail '{model_id}'. Si es un modelo restringido (Prompt Guard 2): "
+                "acepta la licencia en su página de Hugging Face y ejecuta `uv run hf auth login`. "
+                "Alternativa sin licencia: export TFM_GUARD_MODEL=protectai/deberta-v3-base-prompt-injection-v2"
+            ) from exc
         labels = {i: str(lbl).upper() for i, lbl in self.model.config.id2label.items()}
         pos = [i for i, lbl in labels.items() if lbl in POSITIVE_LABELS]
         self.pos_idx = pos or [max(labels)]

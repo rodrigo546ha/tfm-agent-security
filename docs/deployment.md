@@ -3,7 +3,7 @@
 ## En el Mac (equipo principal)
 1. `ollama pull qwen3:8b` y anota el digest en `config/lab.yaml`.
 2. `make setup` (uv venv + dependencias + `requirements.txt`).
-3. Guardrail real: acepta la licencia de Llama Prompt Guard 2 en Hugging Face y `huggingface-cli login`
+3. Guardrail real: acepta la licencia de Llama Prompt Guard 2 en Hugging Face y `uv run hf auth login`
    (o usa `TFM_GUARD_MODEL=protectai/deberta-v3-base-prompt-injection-v2`, sin licencia).
 4. `make reproduce`. Resultados en `results/`.
 

@@ -16,3 +16,5 @@ memoria/*.synctex.gz
 memoria/*.bbl
 memoria/*.blg
 .DS_Store
+# Secretos locales (token de Hugging Face, etc.). Nunca al repo.
+.env

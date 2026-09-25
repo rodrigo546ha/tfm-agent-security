@@ -64,7 +64,20 @@ class RunConfig:
         return bool(self.controls.get(control, False))
 
 
+def load_dotenv(path: Path = ROOT / ".env") -> None:
+    """Carga KEY=VALUE de .env (ignorado por git) sin pisar variables ya definidas. Ahí va HF_TOKEN."""
+    if not path.is_file():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, val = line.split("=", 1)
+        os.environ.setdefault(key.strip(), val.strip().strip('"').strip("'"))
+
+
 def load_settings(path: Path | None = None) -> LabSettings:
+    load_dotenv()
     return LabSettings(_load_yaml(path or CONFIG_DIR / "lab.yaml"))
 
 
