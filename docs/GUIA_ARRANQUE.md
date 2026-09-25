@@ -72,7 +72,12 @@ huggingface-cli login # pega tu token de HF
 
 Verifica que todo enciende **sin modelo** (no descarga nada):
 ```bash
-make test             # 15 tests deben pasar
+make test
+```
+
+> En zsh no pegues los comentarios `# ...` detrás de los comandos: make los interpreta como objetivos.
+
+```bash
 python -m tfm_lab.cli campaign --dry-run   # valida el pipeline entero
 ```
 

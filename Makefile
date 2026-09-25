@@ -1,13 +1,13 @@
 .PHONY: help setup data manifest campaign campaign-fast report chat test lint clean model-digest reproduce memoria memoria-figs
 
-PY ?= python
+PY ?= uv run python
 export PYTHONPATH := src
 
 help:  ## Muestra esta ayuda
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-16s\033[0m %s\n",$$1,$$2}'
 
 setup:  ## Crea el entorno con uv e instala dependencias (incluye extra guard)
-	uv venv
+	uv python install 3.12
 	uv sync --extra guard --extra dev
 	uv export --no-hashes --no-dev --extra guard --format requirements-txt > requirements.txt
 
@@ -33,7 +33,7 @@ test:  ## Ejecuta la batería de tests (sin modelo, backend heurístico)
 	TFM_GUARD_BACKEND=heuristic $(PY) -m pytest -q
 
 lint:  ## ruff
-	ruff check src tests
+	uv run ruff check src tests scripts
 
 model-digest:  ## Muestra el digest del modelo instalado para fijarlo en config/lab.yaml
 	@ollama show $${TFM_MODEL:-qwen3:8b} --modelfile 2>/dev/null | grep -i "^FROM" || \
