@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make test)", "Bash(make lint)", "Bash(make check)", "Bash(make report)",
+      "Bash(make memoria)", "Bash(make memoria-figs)", "Bash(uv run:*)", "Bash(git status)",
+      "Bash(git diff:*)", "Bash(git log:*)", "Bash(ollama list)", "Bash(ollama show:*)"
+    ],
+    "deny": ["Read(./.env)", "Bash(cat .env)"]
+  }
+}
