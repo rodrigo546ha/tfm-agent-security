@@ -5,7 +5,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, Protocol
 
-# Respuesta normalizada: {"content": str, "tool_calls": [{"name": str, "arguments": dict}]}
+# Respuesta normalizada: {"content": str, "tool_calls": [{"name": str, "arguments": dict}], "done_reason": str}
+# done_reason == "length" significa que la respuesta se cortó en num_predict.
 LLMResponse = dict[str, Any]
 
 
@@ -41,7 +42,7 @@ class OllamaBackend:
         calls = []
         for tc in msg.tool_calls or []:
             calls.append({"name": tc.function.name, "arguments": dict(tc.function.arguments or {})})
-        return {"content": msg.content or "", "tool_calls": calls}
+        return {"content": msg.content or "", "tool_calls": calls, "done_reason": resp.done_reason or ""}
 
 
 class ScriptedBackend:
@@ -57,7 +58,8 @@ class ScriptedBackend:
             return self._script(messages, tools)
         resp = self._script[min(self._i, len(self._script) - 1)]
         self._i += 1
-        return {"content": resp.get("content", ""), "tool_calls": resp.get("tool_calls", [])}
+        return {"content": resp.get("content", ""), "tool_calls": resp.get("tool_calls", []),
+                "done_reason": resp.get("done_reason", "stop")}
 
 
 def build_backend(model_cfg: dict[str, Any]) -> OllamaBackend:

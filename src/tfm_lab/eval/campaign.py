@@ -75,7 +75,7 @@ def run_attack(llm, settings, cfg_name: str, scenario: Scenario, v: dict[str, An
         "blocked_input": r.blocked_input, "denied_tool": r.any_denied, "sanitized_result": r.any_sanitized,
         "rejected_tools": list(r.rejected_tools), "output_findings": r.output_findings,
         "tools_called": [c.name for c in r.tool_calls], "steps": r.steps, "latency_s": r.latency_s,
-        "error": r.error,
+        "truncated": r.truncated, "error": r.error,
     }
 
 
@@ -89,7 +89,7 @@ def run_benign(llm, settings, cfg_name: str, task: BenignTask, idx: int, tel: Te
             "mutator": "-", "template": task.template, "benign_ok": ok, "benign_reason": reason,
             "benign_blocked": blocked, "blocked_input": r.blocked_input, "denied_tool": r.any_denied,
             "sanitized_result": r.any_sanitized, "tools_called": [c.name for c in r.tool_calls],
-            "steps": r.steps, "latency_s": r.latency_s, "error": r.error}
+            "steps": r.steps, "latency_s": r.latency_s, "truncated": r.truncated, "error": r.error}
 
 
 class PreflightError(RuntimeError):
@@ -179,7 +179,7 @@ def _write_summary(rows: list[dict[str, Any]], path: Path) -> None:
     keys = ["kind", "config", "scenario", "variant", "mutator", "attack_success", "benign_ok", "benign_reason",
             "benign_blocked", "signals",
             "blocked_input", "denied_tool", "sanitized_result", "forbidden_executed", "untrusted_egress",
-            "steps", "latency_s", "error"]
+            "steps", "latency_s", "truncated", "error"]
     with open(path, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=keys, extrasaction="ignore")
         w.writeheader()

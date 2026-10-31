@@ -9,6 +9,7 @@ model:
     temperature: 0
     seed: 42
     num_ctx: 8192
+    num_predict: 1024       # corta bucles de generación (31 oct: una variante base64 generó 109k caracteres en 2 h)
 
 agent:
   role: analista

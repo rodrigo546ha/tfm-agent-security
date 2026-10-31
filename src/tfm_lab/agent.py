@@ -44,6 +44,7 @@ class AgentResult:
     steps: int = 0
     latency_s: float = 0.0
     error: str = ""
+    truncated: bool = False  # alguna respuesta del modelo se cortó en num_predict
 
     @property
     def any_denied(self) -> bool:
@@ -87,6 +88,9 @@ class Agent:
             for step in range(1, self.max_steps + 1):
                 res.steps = step
                 out = self.llm.chat(messages, self.tools.schemas())
+                if out.get("done_reason") == "length":
+                    res.truncated = True
+                    self.tel.emit("truncated", step=step)
                 calls = out.get("tool_calls") or []
                 if not calls:
                     final = out.get("content", "")

@@ -162,6 +162,9 @@ def main() -> None:
             print(warning)
         util.to_csv(results / "benignas.csv")
         utility_latex(util, s.root / "memoria" / "tablas" / "benignas.tex")
+    if "truncated" in df.columns and (cut := df[df["truncated"].fillna(False).astype(bool)]).shape[0]:
+        print(f"\nAVISO: {len(cut)} ejecuciones con alguna respuesta cortada en num_predict (cuentan como resultado "
+              "normal): " + ", ".join(f"{c} {v}" for c, v in zip(cut["config"], cut["variant"], strict=True)))
     print("\n=== Latencia (s) ===")
     print(latency_table(df).to_string())
     asr_long(df).round(2).to_csv(results / "asr.csv", index=False)
