@@ -2,7 +2,7 @@
 model:
   # Fija el modelo por digest cuando lo descargues: `make model-digest` y pega aquí el valor.
   name: qwen3:8b            # 8 GB de RAM -> qwen3:4b · plan B -> llama3.1:8b
-  digest: ""                # sha256 anotado tras `ollama pull` (reproducibilidad)
+  digest: "sha256-a3de86cd1c132c822487ededd47a324c50491393e6565cd14bafa40d0b8e686f"                # sha256 anotado tras `ollama pull` (reproducibilidad)
   host: http://127.0.0.1:11434
   think: false              # desactiva el razonamiento de Qwen3 (latencia y determinismo)
   options:
