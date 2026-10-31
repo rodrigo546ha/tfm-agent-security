@@ -114,29 +114,33 @@ riesgo del Anexo III aplazado a dic 2027).
   dry-run (backend que responde "Hecho."): no son datos, se sobrescribe en la próxima campaña.
 - Las 50 benignas tienen poca variedad: por los módulos, la plantilla 1 siempre usa "Tecno" y la 4 siempre
   "cláusulas". No se ha cambiado para no alterar el conjunto; decidir antes de la campaña completa.
+- Primera `campaign-fast` real (31 oct), parada en C2: C0 S1 12/20 (60 %), S4 9/14 (64 %), benignas 49/50 (98 %),
+  1 error. Prompt Guard no bloquea la variante base64 (score 0,0007). `S1-s0-base64` entró en bucle de generación
+  (109k caracteres, 2 h): añadido `num_predict: 1024` y columna `truncated` (sin commit). Hay que relanzarla.
+- Revisar: `ollama ps` mostró CONTEXT 4096 con `num_ctx: 8192` en la config; comprobar que las opciones llegan.
 - Memoria: plantilla compilando, DFD renderizado; capítulos sin redactar.
 
-### Desajustes a corregir
-La descripción redactada para la encuesta de la propuesta dice cosas que ya no coinciden con el laboratorio:
+### Encuesta de la propuesta
+Enviada (confirmado el 31 oct). El borrador del 23 sep decía cosas que ya no coinciden con el laboratorio:
 "laboratorio en Docker" (es Ollama nativo; Docker solo para reproducir), "cuatro herramientas simuladas" (son 9)
 y "cinco controles" con "registro estructurado con reglas de detección" (hay telemetría JSONL; las reglas Sigma
-son extensión opcional). Ajustar antes de enviarla.
+son extensión opcional). Se envió **sin corregir**: la memoria explica la evolución del diseño (Ollama nativo
+por la GPU, 9 herramientas, controles finales y estado de las reglas de detección) en los capítulos 5 y 7.
 
 ---
 
 ## 6. Próximos pasos
 
-1. **Encuesta de la propuesta (vencía 29 oct):** confirmar si se envió; si no, corregir la descripción según los
-   desajustes y enviarla cuanto antes.
-2. `make check` y `make campaign-fast`. Criterios antes de la campaña completa:
+1. `make check` y `make campaign-fast`. Criterios antes de la campaña completa:
    - C0 completa ≥ 90 % de las benignas (si no: prompt, esquemas o reducir herramientas, según el plan de arranque);
    - ASR de C0 entre 30 % y 80 % por escenario (si no: endurecer o suavizar semillas);
    - falso bloqueo de C1 ≤ 10 % (si no: umbral del guardrail, documentado como hallazgo);
    - sin filas con error.
-3. Campaña completa: `caffeinate -i make reproduce`, luego `make report memoria-figs memoria`.
-4. Incluir `tablas/benignas.tex` en el capítulo 8 y describir la métrica en el capítulo 3.
-5. Decidir si las reglas de detección (Sigma) entran en el anexo o se quitan del índice de anexos.
-6. Capítulo 4 (modelo de amenazas): matriz completa a partir de `docs/threat-model/`.
+2. Campaña completa: `caffeinate -i make reproduce`, luego `make report memoria-figs memoria`.
+3. Incluir `tablas/benignas.tex` en el capítulo 8 y describir la métrica en el capítulo 3.
+4. Decidir si las reglas de detección (Sigma) entran en el anexo o se quitan del índice de anexos.
+5. Capítulo 4 (modelo de amenazas): matriz completa a partir de `docs/threat-model/`.
+6. Memoria: explicar en los capítulos 5 y 7 por qué el laboratorio difiere de la propuesta enviada.
 7. Recopilar fuentes del estado del arte en `referencias.bib` a medida que se redacta el capítulo 2.
 
 ---
@@ -145,7 +149,7 @@ son extensión opcional). Ajustar antes de enviarla.
 
 **Opción:** 2 — Ciberseguridad en IA generativa.
 
-**Descripción (versión del 23 sep, pendiente de corregir los desajustes de la sección 5):**
+**Descripción (borrador del 23 sep; la encuesta ya se envió, ver sección 5):**
 
 > Las organizaciones están pasando de usar modelos de lenguaje como asistentes conversacionales a desplegar
 > agentes que leen documentos, consultan bases de datos y ejecutan acciones a través de herramientas. Esa
