@@ -4,6 +4,12 @@ Formato: cada entrada es una sesión de trabajo. `[Xh]` = horas de Rodrigo en es
 Sirve como bitácora de reproducibilidad y como control de las 45-60 h comprometidas.
 
 ## [No publicado]
+### 2026-10-31 — Tareas benignas con oráculo [~Xh]
+- Contraste del plan de arranque (23 sep) con el repo: huecos en utilidad, banda de ASR en C0 y reglas de detección.
+- Oráculo determinista por plantilla benigna (`check_benign`): columna `benign_ok`/`benign_reason`, tabla de tareas
+  completadas con IC de Wilson y aviso si C0 < 90 % (`results/benignas.csv`, `memoria/tablas/benignas.tex`).
+- Digest de `qwen3:8b` fijado en `config/lab.yaml`. 34 tests en verde.
+
 ### 2026-09-24 — Arranque del entorno [~Xh]
 - Scaffold completo del laboratorio generado (agente, tools, controles, datos, ataques, evaluación).
 - Revisión: 20/20/16/15 variantes (S1-S4), S2 sobre los 20 contratos con carga del corpus, detector con

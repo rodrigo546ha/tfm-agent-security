@@ -12,7 +12,7 @@ laboratorio (código) y la memoria (LaTeX en `memoria/`). Idioma de código, com
 - No cambiar título ni índice de la memoria: si falta tiempo, se recorta alcance (3 escenarios / 3 controles).
 
 ## Comandos
-- `make test` — 18 tests sin modelo (backend heurístico). Ejecútalo tras cualquier cambio en `src/`.
+- `make test` — 34 tests sin modelo (backend heurístico). Ejecútalo tras cualquier cambio en `src/`.
 - `make lint` — ruff.
 - `make check` — comprueba Ollama, modelo y guardrail. Obligatorio antes de una campaña.
 - `make campaign-fast` — S1+S4 en C0/C2 + 50 benignas (~20-30 min).

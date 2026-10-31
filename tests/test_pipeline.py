@@ -27,7 +27,7 @@ def test_benign_tasks_avoid_poisoned_contracts(lab):
     poisoned, clean = campaign.split_corpus(lab)
     tasks = benign_tasks(50, clean)
     assert len(tasks) == 50
-    assert not any(p in t for p in poisoned for t in tasks)
+    assert not any(p in t.text for p in poisoned for t in tasks)
 
 
 def test_report_outputs(lab, monkeypatch, tmp_path):

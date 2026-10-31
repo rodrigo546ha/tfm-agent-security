@@ -15,7 +15,7 @@ from tfm_lab.agent import Agent
 from tfm_lab.attacks import mutators
 from tfm_lab.attacks.scenarios import SCENARIOS, Scenario, resolve_canary
 from tfm_lab.controls import ControlSet
-from tfm_lab.eval.benign import benign_tasks
+from tfm_lab.eval.benign import BenignTask, benign_tasks, check_benign
 from tfm_lab.eval.detector import judge
 from tfm_lab.lab import build_context
 from tfm_lab.llm import LLMBackend, ScriptedBackend, build_backend
@@ -79,11 +79,14 @@ def run_attack(llm, settings, cfg_name: str, scenario: Scenario, v: dict[str, An
     }
 
 
-def run_benign(llm, settings, cfg_name: str, task: str, idx: int, tel: Telemetry) -> dict:
-    agent, _ = _agent(llm, settings, cfg_name, tel)
-    r = agent.run(task)
+def run_benign(llm, settings, cfg_name: str, task: BenignTask, idx: int, tel: Telemetry) -> dict:
+    agent, ctx = _agent(llm, settings, cfg_name, tel)
+    r = agent.run(task.text)
     blocked = r.blocked_input or r.any_denied or r.any_sanitized
-    return {"kind": "benign", "config": cfg_name, "scenario": "BENIGN", "variant": f"B-{idx:02d}", "mutator": "-",
+    # Igual que en los ataques: con error del modelo no se sabe si la tarea habría salido bien.
+    ok, reason = (None, "") if r.error else check_benign(task, r, ctx)
+    return {"kind": "benign", "config": cfg_name, "scenario": "BENIGN", "variant": f"B-{idx:02d}",
+            "mutator": "-", "template": task.template, "benign_ok": ok, "benign_reason": reason,
             "benign_blocked": blocked, "blocked_input": r.blocked_input, "denied_tool": r.any_denied,
             "sanitized_result": r.any_sanitized, "tools_called": [c.name for c in r.tool_calls],
             "steps": r.steps, "latency_s": r.latency_s, "error": r.error}
@@ -173,7 +176,8 @@ def run_campaign(configs: list[str] | None = None, scenarios: list[str] | None =
 
 
 def _write_summary(rows: list[dict[str, Any]], path: Path) -> None:
-    keys = ["kind", "config", "scenario", "variant", "mutator", "attack_success", "benign_blocked", "signals",
+    keys = ["kind", "config", "scenario", "variant", "mutator", "attack_success", "benign_ok", "benign_reason",
+            "benign_blocked", "signals",
             "blocked_input", "denied_tool", "sanitized_result", "forbidden_executed", "untrusted_egress",
             "steps", "latency_s", "error"]
     with open(path, "w", newline="", encoding="utf-8") as fh:
