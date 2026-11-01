@@ -15,10 +15,10 @@ arquitectura de referencia propuesta.
 
 | | Escenario | ATLAS | OWASP ASI |
 |---|---|---|---|
-| S1 | Inyección directa de instrucciones | AML.T0051 | ASI01 |
-| S2 | Inyección indirecta vía documento | AML.T0051 | ASI01/ASI06 |
-| S3 | Envenenamiento de descripción de herramienta | AML.T0099 | ASI04 |
-| S4 | Robo de credenciales + exfiltración | AML.T0098 | ASI03 |
+| S1 | Inyección directa de instrucciones | AML.T0051.000 | ASI01 |
+| S2 | Inyección indirecta vía documento | AML.T0051.001, AML.T0099 | ASI01 |
+| S3 | Envenenamiento de descripción de herramienta | AML.T0110 | ASI04 |
+| S4 | Robo de credenciales + exfiltración | AML.T0098, AML.T0086 | ASI03/ASI02 |
 
 Configuraciones: **C0** sin controles · **C1** solo guardrail de entrada · **C2** arquitectura completa
 (guardrail entrada + filtro de salida + motor de políticas: mínimo privilegio, allowlist de egress, broker de
