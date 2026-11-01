@@ -137,8 +137,8 @@ riesgo del Anexo III aplazado a dic 2027).
   Decidido (31 oct): error excluido, S4 se informa con n=14 y se explica en el capítulo 6.
 - S3 queda en 25 % en C0, por debajo de la banda 30-80 %: funcionan las semillas 1 (secretos) y 3 (identificador).
   Decidido (1 nov): se documenta como resultado, sin endurecer semillas (mismo criterio que los éxitos de C2).
-- Memoria: **capítulos 3 y 4 redactados** (1 nov): el 3 ocupa ~1,6 caras (presupuesto 1,5) y el 4 ~2,6 (presupuesto
-  3), con el DFD y la matriz; el resto sin redactar. Fuentes nuevas comprobadas en Crossref/Open Library/RFC Editor:
+- Memoria: **capítulos 3, 4 y 5 redactados** (1 nov): el 3 ocupa ~1,6 caras (presupuesto 1,5), el 4 ~2,6 (3) con el
+  DFD y la matriz, y el 5 ~1,5 (2), con las diferencias respecto a la propuesta; el resto sin redactar. Fuentes nuevas comprobadas en Crossref/Open Library/RFC Editor:
   PASTA (UcedaVélez y Morana 2015), STRIDE (Shostack 2014), Wilson 1927, Brown-Cai-DasGupta 2001, RFC 2606.
   `memoria/tablas/*.tex` y `memoria/figuras/asr.png` salen de la campaña completa. Compila con `tectonic`
   (instalado con Homebrew el 1 nov; `make memoria` usa `latexmk` si existe y si no `tectonic`). Con XeTeX las rayas
@@ -164,12 +164,13 @@ por la GPU, 9 herramientas, controles finales y estado de las reglas de detecci�
 1. La campaña completa cumple los criterios: C0 completa 98 % de las benignas, ASR de C0 en la banda 30-80 % salvo
    S3 (25 %, documentado como resultado), falso bloqueo de C1 0 %, única fila con error `S4-s1-base64` (aceptada).
 2. El DFD (figura 1) a ancho completo tiene etiquetas pequeñas: valorar redibujarlo más compacto.
-3. Revisar los capítulos 3 y 4 (en el 4, las prioridades P/I a priori son juicio del autor: confirmarlas).
-   Siguiente capítulo propuesto: 5 (laboratorio: arquitectura, componentes, corpus, reproducibilidad), que
-   incluye por qué el laboratorio difiere de la propuesta enviada.
+3. Revisar los capítulos 3, 4 y 5 (en el 4, las prioridades P/I a priori son juicio del autor: confirmarlas).
+   Siguiente capítulo propuesto: 6 (escenarios S1-S4 con ejemplos de carga y resultados de C0, desglose por
+   mutador, abort de `S4-s1-base64`, base64 que el modelo no decodifica).
 4. Incluir `tablas/benignas.tex` en el capítulo 8.
 5. Decidir si las reglas de detección (Sigma) entran en el anexo o se quitan del índice de anexos.
-6. Memoria: explicar en los capítulos 5 y 7 por qué el laboratorio difiere de la propuesta enviada.
+6. Memoria: el capítulo 5 ya explica Docker, las 9 herramientas y la telemetría; el 7 debe explicar los controles
+   finales frente a los "cinco controles" de la propuesta.
 7. Recopilar fuentes del estado del arte en `referencias.bib` a medida que se redacta el capítulo 2.
 
 ---

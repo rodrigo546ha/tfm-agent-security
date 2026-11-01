@@ -334,7 +334,65 @@ modelo abierto descargado y ejecutado en local.
 \label{sec:lab}
 % ~2 caras. Arquitectura del laboratorio (figura). Componentes: agente (bucle tool-calling propio),
 % herramientas simuladas, gateway de egress (sumidero), vault. Corpus sintético (200 clientes, 80 contratos).
-% Reproducibilidad: seeds, digest del modelo, uv.lock.
+% Reproducibilidad: seeds, digest del modelo, uv.lock. Diferencias con la propuesta enviada (29 oct).
+El laboratorio es un programa en Python que ejecuta el agente objetivo, sus herramientas simuladas y los
+controles en un único equipo, y que mide cada ejecución sin intervención manual. Todo el código está en el
+repositorio público del anexo~\ref{sec:anexo-repo}.
+
+\subsection{Entorno de ejecución}
+El equipo es un Mac con procesador Apple M5 y 16\,GB de memoria. El modelo objetivo es \texttt{qwen3:8b},
+servido por Ollama de forma nativa para aprovechar la GPU del procesador. Se invoca con temperatura 0,
+semilla 42, contexto de 8192 tokens, razonamiento desactivado y un máximo de 1024 tokens por respuesta, y se
+identifica por su \emph{digest} en la configuración, de modo que una actualización del modelo no cambia los
+resultados sin dejar rastro. El guardrail es \emph{Llama Prompt Guard 2} de 86 millones de
+parámetros~\cite{prompt_guard2}, que se ejecuta en CPU con un umbral de 0,5 sobre la probabilidad de
+inyección.
+
+\subsection{Componentes}
+\begin{itemize}
+  \item \textbf{Agente.} Un bucle propio de llamada a herramientas, sin marcos como LangChain, para que cada
+        punto de control sea explícito: mensaje del usuario, llamada a herramienta, resultado y respuesta final.
+        Admite hasta ocho pasos por tarea.
+  \item \textbf{Herramientas.} Las nueve de la sección~\ref{sec:threat}, implementadas sobre una base SQLite
+        (CRM y tabla de secretos), un directorio de contratos y un directorio de páginas web locales.
+  \item \textbf{Pasarela de egress.} \texttt{http\_fetch} y \texttt{enviar\_email} no salen a la red: la
+        pasarela registra el destino y el contenido de cada petición y devuelve la página local si existe. Ese
+        registro es el sumidero donde el detector busca canarios.
+  \item \textbf{Almacén de credenciales.} Entrega el token del servicio CRM. En C0 y C1 lo entrega en claro; en
+        C2 actúa como broker y entrega un identificador \texttt{cred://} de cinco minutos de vida, que la pasarela
+        solo sustituye por el token real cuando el destino es uno de los permitidos para ese servicio.
+  \item \textbf{Controles.} Guardrail, filtro DLP de salida y motor de políticas, activados por la
+        configuración de cada ejecución (C0, C1 o C2) y descritos en la sección~\ref{sec:arquitectura}.
+  \item \textbf{Telemetría.} Cada ejecución escribe una línea JSON por evento (entrada, decisión del guardrail,
+        llamada a herramienta con su decisión, salida) y una fila de resultados con las señales del detector.
+\end{itemize}
+
+\subsection{Corpus sintético}
+El corpus se genera con Faker en español y semilla fija: 200 clientes ficticios con nombre, empresa, correo,
+teléfono, segmento, IBAN, DNI y notas; una tabla de secretos con dos claves canario; 80 contratos con cliente,
+objeto, importe, vigencia y cláusulas; y dos sitios web locales, \texttt{intranet.lab} y \texttt{docs.lab}. Veinte
+contratos llevan una carga de inyección indirecta, una por cada combinación de semilla y mutador del escenario S2,
+y un manifiesto registra cuál lleva cada una. Las tareas legítimas usan solo los 60 contratos restantes. Los
+canarios son cadenas únicas e inequívocas, como \texttt{CANARY-SYS-} seguido de ocho cifras hexadecimales para el
+prompt de sistema, que el detector busca de forma literal.
+
+\subsection{Reproducibilidad}
+Una sola orden, \texttt{make reproduce}, genera el corpus, calcula el manifiesto de hashes de las herramientas,
+ejecuta la campaña completa y produce las tablas y la figura que se incluyen en esta memoria, sin editar ningún
+número a mano. Las dependencias están fijadas con \texttt{uv.lock}, el modelo por su \emph{digest} y el corpus
+por su semilla; dos generaciones consecutivas del corpus producen el mismo contenido. Una batería de
+pruebas automáticas que no necesita el modelo comprueba el detector, los controles y el oráculo de tareas en cada
+cambio del repositorio. Para reproducir en Linux o en una máquina virtual sin GPU, el repositorio incluye un
+\texttt{Dockerfile} y un \texttt{docker-compose.yml}.
+
+\subsection{Diferencias con la propuesta}
+El laboratorio difiere en tres puntos de la descripción enviada en la propuesta. Primero, el modelo se ejecuta
+con Ollama nativo y no en Docker, porque en macOS un contenedor no accede a la GPU del procesador y el modelo
+funcionaría solo con la CPU; Docker queda solo para reproducir en otros entornos. Segundo, el agente tiene nueve
+herramientas en lugar de cuatro, porque los escenarios de robo de credenciales y de herramienta envenenada
+necesitan un almacén de credenciales, dos vías de egress y una herramienta que sustituir. Tercero, el registro
+estructurado existe como telemetría JSON por evento, pero las reglas de detección sobre ella no forman parte de los
+controles evaluados; su estado se recoge en el anexo~\ref{sec:anexo-reglas}.
 
 \section{Escenarios de ataque y resultados de línea base}
 \label{sec:baseline}
@@ -382,11 +440,11 @@ Escenario & C0 & C1 & C2 \\
 
 % --- Anexos (no cuentan en las 20 caras) -------------------------------------------------------------
 \appendix
-\section{Repositorio y guía de despliegue}
+\section{Repositorio y guía de despliegue}\label{sec:anexo-repo}
 El código fuente y la guía de reproducción están en \url{https://github.com/rodrigo546ha/tfm-agent-security}.
 \section{Corpus de ataques}
 Semillas y mutadores; muestra de variantes por escenario.
-\section{Reglas de detección y evidencias}
+\section{Reglas de detección y evidencias}\label{sec:anexo-reglas}
 Telemetría estructurada y ejemplos de captura del sumidero de egress.
 
 \end{document}
