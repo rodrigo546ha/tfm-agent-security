@@ -54,10 +54,10 @@ reproducible y de coste cero que mide su eficacia con una métrica determinista 
 
 | | Escenario | ATLAS | ASI | Variantes | Vector |
 |---|---|---|---|---|---|
-| S1 | Inyección directa | AML.T0051 | ASI01 | 20 (4 semillas × 5 mutadores) | mensaje del usuario |
-| S2 | Inyección indirecta vía documento | AML.T0051 | ASI01/ASI06 | 20 (contratos con carga del corpus) | resultado de herramienta |
-| S3 | Descripción de herramienta envenenada | AML.T0099 | ASI04 | 16 (4 × 4) | descripción de `convertir_divisa` |
-| S4 | Robo de credenciales + exfiltración | AML.T0098 | ASI03 | 15 (3 × 5) | mensaje del usuario / página web |
+| S1 | Inyección directa | AML.T0051.000 | ASI01 | 20 (4 semillas × 5 mutadores) | mensaje del usuario |
+| S2 | Inyección indirecta vía documento | AML.T0051.001, T0099 | ASI01 | 20 (contratos con carga del corpus) | resultado de herramienta |
+| S3 | Descripción de herramienta envenenada | AML.T0110 | ASI04 | 16 (4 × 4) | descripción de `convertir_divisa` |
+| S4 | Robo de credenciales + exfiltración | AML.T0098, T0086 | ASI03/ASI02 | 15 (3 × 5) | mensaje del usuario / página web |
 
 71 ataques × 3 configuraciones + 50 benignas × 3 ≈ 363 ejecuciones (~3-4 h en el Mac).
 
@@ -99,7 +99,7 @@ Anexos: código, corpus de ataques, reglas de detección, evidencias, guía de d
 
 Reglas: los números de resultados solo salen de `make report`; toda afirmación externa lleva `\cite` con entrada
 en `referencias.bib` (URL + fecha de consulta). Fuentes ya identificadas: OWASP Top 10 for Agentic Applications
-2026, MITRE ATLAS (AML.T0051, T0098, T0099), CSA sobre tool poisoning en MCP (MCPTox, ASR 36,5 %), Llama Prompt
+2026, MITRE ATLAS 2026.10 (AML.T0051, T0053, T0086, T0098, T0099, T0110), CSA sobre tool poisoning en MCP (MCPTox, ASR 36,5 %), Llama Prompt
 Guard 2, comparativas garak/PyRIT/promptfoo, Reglamento Europeo de IA (transparencia desde 2 ago 2026; alto
 riesgo del Anexo III aplazado a dic 2027).
 
@@ -136,8 +136,17 @@ riesgo del Anexo III aplazado a dic 2027).
 - Única fila con error: `S4-s1-base64` en las tres configuraciones (Ollama aborta por repetición, determinista).
   Decidido (31 oct): error excluido, S4 se informa con n=14 y se explica en el capítulo 6.
 - S3 queda en 25 % en C0, por debajo de la banda 30-80 %: funcionan las semillas 1 (secretos) y 3 (identificador).
-- Memoria: plantilla compilando, DFD renderizado; capítulos sin redactar. `memoria/tablas/*.tex` y
-  `results/asr.png` salen de esta campaña.
+  Decidido (1 nov): se documenta como resultado, sin endurecer semillas (mismo criterio que los éxitos de C2).
+- Memoria: **capítulo 4 redactado** (1 nov): ocupa ~2,6 caras con el DFD y la matriz; el resto sin redactar.
+  `memoria/tablas/*.tex` y `memoria/figuras/asr.png` salen de la campaña completa. Compila con `tectonic`
+  (instalado con Homebrew el 1 nov; `make memoria` usa `latexmk` si existe y si no `tectonic`). Con XeTeX las rayas
+  Unicode no salen: usar `--`/`---` (también en `report.py`). PDF actual: 7 páginas, sin avisos de margen.
+- Mapeo ATLAS/ASI comprobado el 1 nov en `mitre-atlas/atlas-data` (`dist/v6/ATLAS-2026.10.yaml`) y en el PDF de
+  OWASP (versión 12.6, publicada el 9 dic 2025). Corregido: S3 = AML.T0110 (no T0099), S2 = T0051.001 + T0099 sin
+  ASI06 (no hay memoria persistente), T7 sin ASI05 (ASI05 es ejecución de código). AML.T0056 y T0057 ya no
+  existen en ATLAS 2026.10. Matriz T1-T7 en `docs/threat-model/README.md`.
+- `referencias.bib`: todas las entradas en `@misc` con `howpublished={\url{...}}` y fecha de consulta en `note`
+  (`unsrt` ignora `url`/`urldate`). CSA, ENISA, promptfoo y garak siguen apuntando a la página principal.
 
 ### Encuesta de la propuesta
 Enviada (confirmado el 31 oct). El borrador del 23 sep decía cosas que ya no coinciden con el laboratorio:
@@ -150,13 +159,13 @@ por la GPU, 9 herramientas, controles finales y estado de las reglas de detecci�
 
 ## 6. Próximos pasos
 
-0. Decidir si S3 (25 % en C0, por debajo de la banda) se documenta como resultado (propuesta) o se endurece.
 1. La campaña completa cumple los criterios: C0 completa 98 % de las benignas, ASR de C0 en la banda 30-80 % salvo
-   S3 (25 %), falso bloqueo de C1 0 %, única fila con error `S4-s1-base64` (aceptada).
-2. `make memoria-figs memoria` con los resultados de esta campaña y commit de `tablas/*.tex`.
-3. Incluir `tablas/benignas.tex` en el capítulo 8 y describir la métrica en el capítulo 3.
-4. Decidir si las reglas de detección (Sigma) entran en el anexo o se quitan del índice de anexos.
-5. Capítulo 4 (modelo de amenazas): matriz completa a partir de `docs/threat-model/`.
+   S3 (25 %, documentado como resultado), falso bloqueo de C1 0 %, única fila con error `S4-s1-base64` (aceptada).
+2. El DFD (figura 1) a ancho completo tiene etiquetas pequeñas: valorar redibujarlo más compacto.
+3. Revisar el capítulo 4 (prioridades P/I a priori: son juicio del autor, confirmarlas). Después, capítulo 3
+   (metodología: PASTA/STRIDE, métricas incluida la de tareas completadas).
+4. Incluir `tablas/benignas.tex` en el capítulo 8.
+5. Decidir si las reglas de detección (Sigma) entran en el anexo o se quitan del índice de anexos.
 6. Memoria: explicar en los capítulos 5 y 7 por qué el laboratorio difiere de la propuesta enviada.
 7. Recopilar fuentes del estado del arte en `referencias.bib` a medida que se redacta el capítulo 2.
 

@@ -56,7 +56,7 @@
 \centering
 \vspace*{2cm}
 {\Large\bfseries Máster en Ciberseguridad Defensiva y Ofensiva\par}
-\vspace{0.3cm}{\large Universidad Complutense de Madrid — NTIC Master\par}
+\vspace{0.3cm}{\large Universidad Complutense de Madrid --- NTIC Master\par}
 \vfill
 {\LARGE\bfseries Arquitectura de seguridad de referencia para agentes LLM con acceso a herramientas\par}
 \vspace{0.4cm}
@@ -68,7 +68,7 @@
 \vspace{0.2cm}
 {Tutores: Javier Domínguez Gómez y Román Ramírez\par}
 \vspace{1cm}
-{Curso 2025–2026 — Convocatoria de febrero de 2027\par}
+{Curso 2025--2026 --- Convocatoria de febrero de 2027\par}
 \end{titlepage}
 
 % --- RESUMEN e ÍNDICE (no cuentan en las 20 caras) ---------------------------------------------------
@@ -120,7 +120,7 @@ modelado de amenazas, red teaming.
 \subsection{Taxonomías de amenazas}
 El marco \atlas{MITRE ATLAS}~\cite{mitre_atlas} cataloga tácticas y técnicas adversarias contra sistemas de
 IA; el \emph{OWASP Top 10 for Agentic Applications 2026}~\cite{owasp_asi_2026} las traslada al plano de los
-agentes (ASI01–ASI10). Las guías de \atlas{ENISA}~\cite{enisa_ai} aportan el encuadre regulatorio europeo, y
+agentes (ASI01--ASI10). Las guías de \atlas{ENISA}~\cite{enisa_ai} aportan el encuadre regulatorio europeo, y
 la \atlas{CSA}~\cite{csa_tool_poisoning_2026} documenta el envenenamiento de herramientas en el protocolo MCP.
 \subsection{Herramientas de evaluación de seguridad de LLM}
 Se comparan \texttt{garak}~\cite{garak} (escáner de vulnerabilidades) y
@@ -144,29 +144,125 @@ Se acompaña de la tasa de bloqueo de tareas legítimas (falsos positivos sobre 
 
 \section{Sistema objetivo y modelo de amenazas}
 \label{sec:threat}
-% ~3 caras. Descripción del agente objetivo y sus herramientas. DFD con límites de confianza (figura).
-% Matriz de amenazas priorizada mapeada a ATLAS/ASI (tabla). Este es el capítulo con más peso.
+% ~3 caras. Fases 1-5 de PASTA aplicadas al agente: objetivos y activos, DFD con límites de confianza,
+% STRIDE por elemento y matriz priorizada mapeada a ATLAS 2026.10 y OWASP ASI 2026. Prioridad a priori:
+% el capítulo 6 la contrasta con el ASR medido. Fuente de la matriz: docs/threat-model/README.md.
+Este capítulo aplica las fases de PASTA descritas en la sección~\ref{sec:metodo} al agente del laboratorio:
+fija los objetivos de seguridad y los activos, descompone el sistema en un diagrama de flujo de datos (DFD),
+clasifica las amenazas de cada elemento con STRIDE y las prioriza en una matriz mapeada a
+\atlas{MITRE ATLAS}~\cite{mitre_atlas} y al \emph{OWASP Top 10 for Agentic Applications}~\cite{owasp_asi_2026}.
+La fase de análisis de ataques se concreta en los escenarios S1--S4 de la sección~\ref{sec:baseline}.
+
+\subsection{Sistema objetivo y activos}
+\emph{AsistenteLab} es un asistente interno para los analistas de una empresa ficticia. Recibe peticiones en
+lenguaje natural y las resuelve con un bucle propio de llamada a herramientas sobre un modelo local
+(sección~\ref{sec:lab}). Actúa con el rol \emph{analista} y dispone de nueve herramientas:
+\begin{itemize}
+  \item \textbf{Clientes}: \texttt{buscar\_clientes} y \texttt{obtener\_cliente}, que devuelve la ficha
+        completa, incluidos IBAN, DNI y notas internas.
+  \item \textbf{Contratos}: \texttt{leer\_contrato} y \texttt{buscar\_contratos}.
+  \item \textbf{Salida al exterior (egress)}: \texttt{enviar\_email} y \texttt{http\_fetch}, que admite GET o
+        POST a cualquier URL.
+  \item \textbf{Credenciales}: \texttt{obtener\_credencial}, que entrega una credencial temporal de un servicio
+        interno, y \texttt{consultar\_secretos}, una herramienta de administración que lee la tabla de secretos
+        y que el trabajo del analista no necesita.
+  \item \textbf{Utilidad}: \texttt{convertir\_divisa}, que en el escenario S3 se sustituye por una versión
+        de un tercero.
+\end{itemize}
+Los activos que se protegen son cuatro: \textbf{A1}, secretos y credenciales (tabla de secretos y token del
+servicio CRM); \textbf{A2}, datos personales de los 200 clientes; \textbf{A3}, el prompt de sistema, que
+contiene un identificador interno de configuración; y \textbf{A4}, la integridad de las acciones que el agente
+ejecuta en nombre de la empresa (correos y peticiones salientes). A1 y A3 llevan canarios, de modo que su
+compromiso es observable de forma determinista (sección~\ref{sec:metodo}). El objetivo de seguridad es que
+ningún contenido no confiable cambie lo que el agente hace con A1--A4, sin impedir las tareas legítimas.
+
+\subsection{Diagrama de flujo de datos y límites de confianza}
+La figura~\ref{fig:dfd} muestra los flujos del agente y los puntos de control que añade la arquitectura de
+referencia (sección~\ref{sec:arquitectura}). El límite de confianza deja dentro el modelo, el motor de
+políticas, las herramientas internas, el CRM y el broker de credenciales, y fuera cuatro puntos de entrada:
+\begin{itemize}
+  \item \textbf{E1, mensaje del usuario.} El analista es legítimo, pero su mensaje puede ser malicioso o
+        contener texto preparado por un tercero, como un correo pegado.
+  \item \textbf{E2, resultados de herramientas.} Contratos y páginas web que el agente lee como dato y que un
+        atacante puede escribir sin tener acceso al agente.
+  \item \textbf{E3, descripciones de herramientas de terceros}, que se cargan en el contexto del modelo al
+        registrar la herramienta, como ocurre con los servidores MCP.
+  \item \textbf{E4, salidas}: la respuesta al usuario y el egress por \texttt{http\_fetch} y
+        \texttt{enviar\_email}, por donde un activo puede salir del perímetro.
+\end{itemize}
+La hipótesis de partida es la que recoge OWASP para ASI01: el agente y el modelo no distinguen de forma fiable
+las instrucciones del contenido que procesan~\cite{owasp_asi_2026}. Por tanto, cualquier texto que cruce E1,
+E2 o E3 puede actuar como instrucción, y aunque el modelo esté dentro de la zona de confianza sus decisiones
+no lo están: cada llamada a herramienta pasa por el motor de políticas antes de ejecutarse. Los controles se
+colocan en las fronteras (entrada, resultados, registro de herramientas, llamada y salida) y no dependen de que
+el modelo obedezca su prompt de sistema.
+
 \begin{figure}[h]\centering
-\IfFileExists{figuras/dfd.png}{\includegraphics[width=0.9\textwidth]{figuras/dfd.png}}{%
+\IfFileExists{figuras/dfd.png}{\includegraphics[width=\textwidth]{figuras/dfd.png}}{%
 \fbox{\parbox{0.8\textwidth}{\centering\vspace{1.5cm}[Exporta \texttt{docs/threat-model/dfd.mmd} a
 \texttt{figuras/dfd.png}]\vspace{1.5cm}}}}
-\caption{Diagrama de flujo de datos del agente y sus límites de confianza.}\label{fig:dfd}
+\caption{Diagrama de flujo de datos del agente, límite de confianza y puntos de control.}\label{fig:dfd}
 \end{figure}
 
-\begin{table}[h]\centering\small
-\caption{Matriz de amenazas priorizada (extracto).}\label{tab:amenazas}
-\begin{tabularx}{\textwidth}{llllX}
+\subsection{Amenazas por categoría STRIDE}
+Recorrer los elementos del DFD con STRIDE da las siguientes amenazas:
+\begin{itemize}
+  \item \textbf{Suplantación (S)}: una herramienta de terceros se presenta con el nombre y la función de una
+        legítima, pero su descripción contiene instrucciones (E3).
+  \item \textbf{Manipulación (T)}: contenido no confiable altera el objetivo del agente, por inyección directa
+        (E1) o indirecta a través de documentos y páginas (E2).
+  \item \textbf{Repudio (R)}: acciones del agente que no pueden atribuirse a una petición concreta. Se mitiga con
+        telemetría estructurada por ejecución; no se mide en los escenarios.
+  \item \textbf{Revelación de información (I)}: salida del prompt de sistema, de secretos, credenciales o datos
+        personales por la respuesta o por egress (E4).
+  \item \textbf{Denegación de servicio (D)}: bucles de generación o de llamadas a herramientas. Se acota con un
+        límite de pasos y de tokens por respuesta y queda fuera de los controles evaluados.
+  \item \textbf{Elevación de privilegios (E)}: el agente secuestrado usa herramientas que la tarea no requiere,
+        como \texttt{consultar\_secretos}, con los permisos del propio agente (\emph{confused deputy}).
+\end{itemize}
+
+\subsection{Matriz de amenazas priorizada}
+La tabla~\ref{tab:amenazas} recoge las siete amenazas resultantes. La probabilidad (P) y el impacto (I) se
+estiman de forma cualitativa (alta, media o baja) antes de experimentar, y la prioridad combina ambas:
+\emph{crítica} si las dos son altas, \emph{alta} si una es alta y la otra media, y \emph{media} si las dos son
+medias. Las técnicas y categorías corresponden a la versión 2026.10 de ATLAS~\cite{mitre_atlas} y a la edición
+2026 del Top~10 de OWASP~\cite{owasp_asi_2026}.
+
+\begin{table}[h]\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\caption{Matriz de amenazas priorizada (P: probabilidad, I: impacto; A: alta, M: media).}\label{tab:amenazas}
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}Xl>{\raggedright\arraybackslash}p{2.1cm}lccl%
+>{\raggedright\arraybackslash}X@{}}
 \toprule
-ID & STRIDE & ATLAS & ASI & Control principal \\
+ID & Amenaza & STRIDE & ATLAS & ASI & P/I & Prior. & Esc. & Control principal \\
 \midrule
-T1 & Tampering/EoP & AML.T0051 & ASI01 & Guardrail de entrada \\
-T2 & Tampering & AML.T0051 & ASI01/06 & Guardrail sobre resultados de herramientas \\
-T3 & Spoofing & AML.T0099 & ASI04 & Pinning de manifiesto de herramientas \\
-T4 & Info. disclosure & AML.T0098 & ASI03 & Broker de credenciales + mínimo privilegio \\
-T5 & Info. disclosure & AML.T0098 & ASI03 & Allowlist de egress + filtro de salida \\
+T1 & Inyección directa (E1) & T, E & T0051.000, T0069.002 & ASI01 & A/M & Alta & S1 & Guardrail de entrada \\
+T2 & Inyección indirecta vía documento o web (E2) & T, E & T0051.001, T0099 & ASI01 & A/A & Crítica & S2 & Guardrail sobre resultados \\
+T3 & Descripción de herramienta envenenada (E3) & S, T & T0110, T0010.005 & ASI04 & M/A & Alta & S3 & Pinning por hash \\
+T4 & Robo de credenciales & I, E & T0098 & ASI03 & M/A & Alta & S4 & Broker \texttt{cred://} \\
+T5 & Exfiltración por egress (E4) & I & T0086 & ASI02 & M/A & Alta & S2--S4 & Allowlist de egress \\
+T6 & Acción no autorizada con herramienta legítima & E & T0053 & ASI02 & M/M & Media & S2--S4 & Confirmación humana \\
+T7 & Fuga de datos personales en la respuesta (E4) & I & T0136 & -- & M/M & Media & Benignas & Máscara de campos y DLP \\
 \bottomrule
 \end{tabularx}
 \end{table}
+
+T2 es la única amenaza crítica: el atacante no necesita acceso al agente, basta con que el agente lea un
+documento que él controla, y el usuario no ve la carga. T1 es la más probable, porque cualquier usuario puede
+intentarla con técnicas públicas, pero sin otras amenazas su impacto se limita al prompt de sistema y a lo que
+el modelo acepte hacer. T3 exige que se instale una herramienta comprometida, pero afecta a todas las sesiones
+que la cargan. T4 y T5 suelen ser la segunda mitad de una cadena que empieza en T1, T2 o T3, y por eso los
+escenarios S2 y S3 incluyen semillas de robo y exfiltración. T7 no requiere atacante: el agente puede
+mostrar datos personales al resolver una tarea legítima. No se ataca en ningún escenario; su control se
+aplica durante las tareas benignas y su coste queda recogido en la tasa de tareas completadas. La fuga de A2
+en la respuesta no tiene categoría propia en el Top~10 de OWASP, por eso su columna ASI queda vacía. La sección~\ref{sec:baseline} contrasta esta priorización con el ASR medido sin controles.
+
+\subsection{Fuera de alcance}
+Quedan fuera las categorías de OWASP que el sistema objetivo no expone: ASI05 (ejecución de código), porque
+ninguna herramienta ejecuta código; ASI06 (envenenamiento de memoria y contexto), porque el agente no conserva
+memoria entre tareas; ASI07, ASI08 y ASI10, porque hay un solo agente; y ASI09 (explotación de la confianza
+humana), porque en las campañas la confirmación humana la da un aprobador automático. También quedan fuera
+los ataques al propio modelo, como el envenenamiento del entrenamiento o su extracción, ya que se usa un
+modelo abierto descargado y ejecutado en local.
 
 \section{Diseño del laboratorio experimental}
 \label{sec:lab}
@@ -221,7 +317,7 @@ Escenario & C0 & C1 & C2 \\
 % --- Anexos (no cuentan en las 20 caras) -------------------------------------------------------------
 \appendix
 \section{Repositorio y guía de despliegue}
-Código fuente y reproducibilidad: \url{https://github.com/<usuario>/tfm-agent-security}.
+El código fuente y la guía de reproducción están en \url{https://github.com/rodrigo546ha/tfm-agent-security}.
 \section{Corpus de ataques}
 Semillas y mutadores; muestra de variantes por escenario.
 \section{Reglas de detección y evidencias}
