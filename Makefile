@@ -51,5 +51,6 @@ clean:  ## Borra datos generados y resultados
 memoria-figs:  ## Copia las figuras de results/ a memoria/figuras/
 	mkdir -p memoria/figuras && cp results/asr.png memoria/figuras/asr.png
 
-memoria:  ## Compila la memoria LaTeX (memoria/memoria.pdf)
-	cd memoria && latexmk -pdf -interaction=nonstopmode memoria.tex
+memoria:  ## Compila la memoria LaTeX (memoria/memoria.pdf) con latexmk o, si no está, con tectonic
+	cd memoria && if command -v latexmk >/dev/null; then latexmk -pdf -interaction=nonstopmode memoria.tex; \
+	else tectonic --keep-logs memoria.tex; fi

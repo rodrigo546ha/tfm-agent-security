@@ -13,8 +13,9 @@ import pandas as pd
 
 from tfm_lab.settings import load_settings
 
-SCEN_NAMES = {"S1": "S1 — inyección directa", "S2": "S2 — inyección indirecta",
-              "S3": "S3 — herramienta envenenada", "S4": "S4 — robo de credenciales"}
+# Nombres para la tabla LaTeX: "---" en vez de la raya Unicode, que tectonic (XeTeX) no representa con lmodern T1.
+SCEN_NAMES = {"S1": "S1 --- inyección directa", "S2": "S2 --- inyección indirecta",
+              "S3": "S3 --- herramienta envenenada", "S4": "S4 --- robo de credenciales"}
 
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:

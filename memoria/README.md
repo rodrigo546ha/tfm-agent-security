@@ -5,8 +5,12 @@ las conclusiones) debe caber en 20 páginas; portada, resumen, índice, bibliogr
 cuentan según la guía. Cada sección lleva en comentario el número de caras orientativo y qué contar.
 
 ## Compilar
+`make memoria` usa `latexmk` si está instalado y, si no, `tectonic` (`brew install tectonic`, ~20 MB; descarga
+los paquetes que necesita la primera vez). Con tectonic (XeTeX) escribe las rayas como `--`/`---`, no como
+caracteres Unicode, o no saldrán con la fuente T1.
 ```bash
 latexmk -pdf memoria.tex        # encadena pdflatex + bibtex + pdflatex + pdflatex
+tectonic memoria.tex            # alternativa ligera: resuelve bibtex y las pasadas solo
 # o manualmente:
 pdflatex memoria ; bibtex memoria ; pdflatex memoria ; pdflatex memoria
 ```
