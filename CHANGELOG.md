@@ -22,6 +22,8 @@ estiman a partir de las horas de los commits. Acumulado estimado: ~5 h.
 - `tectonic` instalado (Homebrew); `make memoria` lo usa si no hay `latexmk`. Rayas Unicode cambiadas por
   `---` (memoria y `report.py`), títulos de la bibliografía protegidos de minúsculas, URL del repo en el anexo A.
   La memoria compila (7 páginas); el capítulo 4 ocupa ~2,6 caras.
+- Capítulo 3 redactado (PASTA y STRIDE, diseño experimental, métricas con IC de Wilson, regla de errores, ética y
+  legalidad), ~1,6 caras. Cinco fuentes nuevas en `referencias.bib`. La memoria compila (10 páginas).
 
 ### 2026-10-31 — Tareas benignas con oráculo [~1h]
 - Contraste del plan de arranque (23 sep) con el repo: huecos en utilidad, banda de ASR en C0 y reglas de detección.

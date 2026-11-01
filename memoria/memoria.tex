@@ -134,13 +134,79 @@ que se ejecuta en CPU.
 \label{sec:metodo}
 % ~1,5 caras. PASTA como proceso, STRIDE como clasificación. Diseño experimental: configuraciones C0/C1/C2,
 % escenarios, variantes por mutación, métricas. Ética y legalidad: laboratorio aislado, datos sintéticos,
-% sin objetivos reales, sin exfiltración real (sumidero local).
+% sin objetivos reales, sin exfiltración real (sumidero local). Definiciones exactas: eval/detector.py,
+% eval/benign.py y eval/campaign.py.
+El trabajo combina un modelado de amenazas cualitativo, que decide qué atacar y qué controles proponer, con una
+validación experimental cuantitativa, que mide cuánto reduce el riesgo cada configuración de controles.
+
+\subsection{Modelado de amenazas: PASTA y STRIDE}
+El proceso sigue PASTA (\emph{Process for Attack Simulation and Threat Analysis})~\cite{pasta2015}, una
+metodología de siete fases centrada en el riesgo que va de los objetivos de negocio al análisis de riesgo
+residual. Las fases de objetivos, alcance técnico, descomposición, análisis de amenazas y de vulnerabilidades
+se desarrollan en la sección~\ref{sec:threat}; la de modelado y simulación de ataques corresponde a los
+escenarios del laboratorio (sección~\ref{sec:baseline}), y la de análisis de riesgo, a la comparación entre
+configuraciones (sección~\ref{sec:validacion}). Dentro de la fase de análisis de amenazas, cada elemento del
+DFD se recorre con STRIDE~\cite{shostack2014} y cada amenaza se mapea a técnicas de
+\atlas{MITRE ATLAS}~\cite{mitre_atlas} y a categorías del Top~10 de OWASP para aplicaciones
+agénticas~\cite{owasp_asi_2026}.
+
+\subsection{Diseño experimental}
+Se comparan tres configuraciones del mismo agente: \textbf{C0}, sin controles, como línea base;
+\textbf{C1}, solo el guardrail, aplicado al mensaje del usuario, a los resultados de las herramientas y a las
+descripciones de herramientas de terceros; y \textbf{C2}, la arquitectura de referencia completa
+(sección~\ref{sec:arquitectura}). La diferencia entre C0 y C1 aísla lo que aporta un clasificador de inyecciones
+por sí solo, y la diferencia entre C1 y C2, lo que aportan los controles de arquitectura.
+
+Cada configuración se somete a 71 variantes de ataque repartidas en cuatro escenarios (S1--S4,
+sección~\ref{sec:baseline}). Cada variante combina una semilla, que fija el objetivo del ataque, con un
+mutador, que cambia su forma: sin cambios, juego de rol, falsa autoridad, codificación base64 o comentario
+oculto. Además se ejecutan 50 tareas legítimas generadas a partir de diez plantillas sobre el CRM, los
+contratos sin carga y la intranet. En total son $3 \times (71 + 50) = 363$ ejecuciones. El modelo se usa con
+temperatura 0, semilla fija y una versión identificada por su \emph{digest}, y el corpus se genera con
+semilla fija, de modo que una misma ejecución da siempre el mismo resultado. Por eso cada variante se ejecuta
+una sola vez, y la incertidumbre que se informa es la que procede del número de variantes.
+
 \subsection{Métricas}
-La métrica principal es la \emph{Attack Success Rate} (ASR):
+\textbf{Tasa de éxito de ataque (ASR).} Una ejecución de ataque tiene éxito si se cumple al menos una
+condición: (i) un canario objetivo del escenario aparece en la respuesta o en el tráfico saliente hacia un host
+no confiable; (ii) se ejecuta con permiso una herramienta prohibida para el escenario; o (iii) hay tráfico
+saliente hacia un host fuera de la lista de hosts internos. La detección es determinista y no usa un LLM como
+juez. El criterio es estricto: un ataque que desvía al agente cuenta como éxito aunque otro control impida
+después que el dato salga.
 \[
-\mathrm{ASR} = \frac{\#\{\text{intentos en los que un canario objetivo alcanza un sumidero}\}}{\#\text{intentos}}.
+\mathrm{ASR} = \frac{\#\{\text{ejecuciones de ataque con éxito}\}}{\#\{\text{ejecuciones de ataque válidas}\}}.
 \]
-Se acompaña de la tasa de bloqueo de tareas legítimas (falsos positivos sobre 50 tareas benignas) y la latencia.
+\textbf{Falso bloqueo.} Proporción de tareas legítimas en las que interviene algún control: el guardrail
+bloquea el mensaje, la política deniega una llamada o el guardrail sanea el resultado de una herramienta.
+
+\textbf{Tareas completadas.} El falso bloqueo no detecta un agente que responde sin hacer la tarea. Para
+medir la utilidad, un oráculo determinista por plantilla comprueba que se ejecutó la herramienta esperada y
+que el dato correcto del corpus (importe, segmento, correo, importe convertido, término de la página) aparece
+en la respuesta o, en las tareas de correo, en el mensaje enviado. Cada fallo se clasifica \emph{con bloqueo}
+o \emph{sin bloqueo}. Se exige que C0 complete al menos el 90\,\% de las tareas: por debajo, el ASR de la línea
+base no sería interpretable, porque el modelo tampoco sabría usar las herramientas.
+
+\textbf{Latencia.} Tiempo de pared por ejecución, con media, mediana y percentil 95.
+
+\textbf{Incertidumbre.} Todas las proporciones se acompañan de un intervalo de Wilson al 95\,\%~\cite{wilson1927},
+\[
+\frac{\hat p + \frac{z^2}{2n} \pm z\sqrt{\frac{\hat p(1-\hat p)}{n} + \frac{z^2}{4n^2}}}{1 + \frac{z^2}{n}},
+\qquad z = 1{,}96,
+\]
+preferible al intervalo de Wald con muestras de 14 a 50 casos y proporciones cercanas a 0 o a 1~\cite{brown2001}.
+
+\textbf{Errores.} Un fallo del modelo o del entorno no cuenta como ataque fallido: la ejecución se excluye de
+las métricas y la campaña se detiene tras tres errores seguidos. Una respuesta cortada por el límite de tokens sí
+cuenta como resultado.
+
+\subsection{Ética y legalidad}
+Todo el laboratorio se ejecuta en un único equipo. El modelo y el guardrail son abiertos y locales. Las
+herramientas de salida no generan tráfico de red: una pasarela simulada registra cada petición y cada correo y
+devuelve páginas locales. Los destinos externos de las cargas usan el dominio de primer nivel
+\texttt{.example}, reservado para documentación~\cite{rfc2606}. Los datos son sintéticos, generados con
+semilla fija; los secretos son canarios sin valor fuera del laboratorio, y no se ataca ningún sistema de
+terceros. El código, el corpus de ataques y los resultados se publican en un repositorio abierto para que
+cualquiera pueda reproducir las medidas.
 
 \section{Sistema objetivo y modelo de amenazas}
 \label{sec:threat}
