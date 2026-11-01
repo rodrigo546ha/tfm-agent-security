@@ -146,6 +146,37 @@ def latex_table(df: pd.DataFrame, out: Path) -> None:
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+MUT_NAMES = {"none": "Sin cambios", "roleplay": "Rol", "authority": "Autoridad", "base64": "Base64",
+             "hidden_comment": "Comentario"}
+
+
+def breakdown(df: pd.DataFrame, cfg: str = "C0") -> pd.DataFrame:
+    """Éxitos/intentos de una configuración por escenario × mutador y escenario × semilla."""
+    atk = df[(df["kind"] == "attack") & (df["config"] == cfg)].copy()
+    atk["seed"] = "s" + atk["variant"].str.extract(r"-s(\d)-", expand=False)
+    rows = []
+    for (scen, col), g in list(atk.groupby(["scenario", "mutator"])) + list(atk.groupby(["scenario", "seed"])):
+        rows.append({"scenario": scen, "col": col, "k": int(g["attack_success"].sum()), "n": len(g)})
+    return pd.DataFrame(rows)
+
+
+def breakdown_latex(df: pd.DataFrame, out: Path, cfg: str = "C0") -> None:
+    b = breakdown(df, cfg).set_index(["scenario", "col"])
+    seeds = sorted(c for c in b.index.get_level_values("col").unique() if c.startswith("s"))
+    cols = list(MUT_NAMES) + seeds
+    nm, ns = len(MUT_NAMES), len(seeds)
+    lines = [r"\begin{tabular}{l" + "c" * nm + "|" + "c" * ns + "}", r"\toprule",
+             f" & \\multicolumn{{{nm}}}{{c|}}{{Mutador}} & \\multicolumn{{{ns}}}{{c}}{{Semilla}} \\\\",
+             # semillas numeradas como en scenarios.py (0, 1...) para no confundirlas con los escenarios S1-S4
+             "Escenario & " + " & ".join(list(MUT_NAMES.values()) + [s[1:] for s in seeds]) + r" \\", r"\midrule"]
+    for scen in sorted(b.index.get_level_values("scenario").unique()):
+        cells = [f"{b.loc[(scen, c), 'k']}/{b.loc[(scen, c), 'n']}" if (scen, c) in b.index else "--" for c in cols]
+        lines.append(f"{scen} & " + " & ".join(cells) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def main() -> None:
     s = load_settings()
     results = s.path("results")
@@ -171,7 +202,9 @@ def main() -> None:
     asr_long(df).round(2).to_csv(results / "asr.csv", index=False)
     plot_asr(df, results / "asr.png")
     latex_table(df, s.root / "memoria" / "tablas" / "asr.tex")
-    extra = " · memoria/tablas/benignas.tex" if not util.empty else ""
+    breakdown_latex(df, s.root / "memoria" / "tablas" / "c0_desglose.tex")
+    extra = " · memoria/tablas/c0_desglose.tex"
+    extra += " · memoria/tablas/benignas.tex" if not util.empty else ""
     print(f"\n-> {results / 'asr.csv'} · {results / 'asr.png'} · memoria/tablas/asr.tex{extra}")
 
 

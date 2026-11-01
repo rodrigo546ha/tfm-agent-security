@@ -38,5 +38,10 @@ def test_report_outputs(lab, monkeypatch, tmp_path):
     report.latex_table(df, tmp_path / "asr.tex")
     assert (tmp_path / "asr.png").stat().st_size > 0
     assert "tabular" in (tmp_path / "asr.tex").read_text()
+    report.breakdown_latex(df, tmp_path / "desglose.tex")
+    desglose = (tmp_path / "desglose.tex").read_text()
+    assert "Mutador" in desglose and "Semilla" in desglose
+    b = report.breakdown(df)
+    assert b.groupby("col")["n"].sum().loc["none"] == 4  # S1: 4 semillas con el mutador "none"
     lo, hi = report.wilson(5, 20)
     assert 0.1 < lo < 0.25 < hi < 0.5
