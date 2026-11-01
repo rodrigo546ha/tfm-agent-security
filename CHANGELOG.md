@@ -28,6 +28,8 @@ estiman a partir de las horas de los commits. Acumulado estimado: ~5 h.
   La memoria compila (11 páginas).
 - Capítulo 6 redactado (escenarios S1-S4, mutadores y análisis cualitativo de C0), ~1,8 caras. `make report` genera
   `tablas/c0_desglose.tex` (C0 por mutador y semilla), con test. La memoria compila (13 páginas).
+- Capítulo 7 redactado (principios, controles K1-K10 con tabla, defensa en profundidad frente a T1-T7 y
+  diferencias con la propuesta), ~1,6 caras. La memoria compila (15 páginas).
 
 ### 2026-10-31 — Tareas benignas con oráculo [~1h]
 - Contraste del plan de arranque (23 sep) con el repo: huecos en utilidad, banda de ASR en C0 y reglas de detección.

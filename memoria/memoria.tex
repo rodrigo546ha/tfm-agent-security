@@ -500,6 +500,91 @@ deben a incapacidad.
 % ~3 caras. Los controles como patrones: guardrail de entrada, guardrail sobre resultados de herramientas,
 % filtro de salida (DLP), motor de políticas (mínimo privilegio, allowlist de egress, broker de credenciales,
 % confirmación humana, pinning de descripciones). Justificación de cada uno frente a las amenazas T1-T7.
+% Fuente: controls/ (__init__.py, input_guard.py, policy.py, output_filter.py), lab.py (Vault) y config/policy.yaml.
+La arquitectura de referencia es la configuración C2. Parte de la conclusión de la sección~\ref{sec:threat}: el
+modelo no distingue instrucciones de datos, así que su seguridad no puede depender de que obedezca su prompt de
+sistema. De ahí salen cuatro principios de diseño. Los controles se ejecutan \textbf{fuera del modelo}, en las
+fronteras del DFD. Cada amenaza tiene \textbf{al menos dos controles en capas distintas}, de modo que el fallo de
+uno no basta para el compromiso. El agente recibe \textbf{el mínimo privilegio y los mínimos datos} que necesita
+la tarea. Y los controles son \textbf{deterministas} siempre que es posible: solo el guardrail es un clasificador
+probabilístico.
+
+\subsection{Controles}
+La tabla~\ref{tab:controles} resume los diez controles, el punto del DFD donde actúan y las amenazas que
+cubren. El guardrail es el único control de C1; C2 los activa todos.
+
+\begin{table}[h]\centering\footnotesize
+\caption{Controles de la arquitectura de referencia (P: probabilístico; D: determinista).}\label{tab:controles}
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}Xllll@{}}
+\toprule
+ID & Control & Punto & Tipo & Amenazas & Config. \\
+\midrule
+K1 & Guardrail sobre el mensaje del usuario & E1 & P & T1 & C1, C2 \\
+K2 & Guardrail sobre resultados de herramientas y descripciones de terceros & E2, E3 & P & T2, T3 & C1, C2 \\
+K3 & Pinning de definiciones de herramientas por hash & E3 & D & T3 & C2 \\
+K4 & Mínimo privilegio: herramientas permitidas por rol & Llamada & D & T1--T4, T6 & C2 \\
+K5 & Allowlist de egress (hosts) y de destinatarios de correo & Llamada & D & T5, T6 & C2 \\
+K6 & DLP sobre los argumentos de las herramientas de egress & Llamada & D & T4, T5 & C2 \\
+K7 & Broker de credenciales con identificadores \texttt{cred://} & Herramienta & D & T4, T5 & C2 \\
+K8 & Confirmación humana de acciones con efecto exterior & Llamada & D & T5, T6 & C2 \\
+K9 & Minimización: campos sensibles enmascarados & Resultado & D & T7 & C2 \\
+K10 & Filtro DLP de la respuesta & E4 & D & T1, T4, T7 & C2 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Guardrails (K1, K2).} Un clasificador de inyecciones, \emph{Llama Prompt Guard 2}~\cite{prompt_guard2},
+puntúa cada texto no confiable antes de que llegue al modelo. Los textos largos se trocean en ventanas
+solapadas y se toma la puntuación máxima. Si el mensaje del usuario supera el umbral, el agente no lo procesa.
+Si lo supera el resultado de una herramienta, el modelo recibe un aviso en su lugar y nunca ve el contenido. Si
+lo supera la descripción de una herramienta de terceros, la herramienta no se registra.
+
+\textbf{Pinning de herramientas (K3).} Un manifiesto guarda el hash SHA-256 del nombre, la descripción y los
+parámetros de cada herramienta aprobada. Al arrancar, una herramienta cuya definición no coincide con el
+manifiesto no se registra, de modo que su descripción nunca entra en el contexto. Es el complemento determinista
+de K2 para T3: no depende de que la descripción \emph{parezca} maliciosa, sino de que haya cambiado.
+
+\textbf{Motor de políticas (K4--K6, K8).} Toda llamada a herramienta pasa por un motor que la autoriza o la
+deniega antes de ejecutarla; si la deniega, el modelo recibe el motivo. K4 aplica una lista de herramientas por
+rol: el rol analista no tiene \texttt{consultar\_secretos}, que su trabajo no requiere. K5 solo deja que
+\texttt{http\_fetch} contacte con \texttt{intranet.lab} y \texttt{docs.lab}, y que \texttt{enviar\_email} escriba
+a direcciones de \texttt{empresa.lab}. K6 examina los argumentos de las dos herramientas de egress con las mismas
+reglas que K10 y deniega la llamada si encuentra un canario, un secreto conocido, un token, un IBAN o un DNI. K8
+exige aprobación para enviar correo; en las campañas la da un aprobador automático estricto que solo aprueba lo
+que ya ha superado los controles anteriores y no contiene una credencial.
+
+\textbf{Broker de credenciales (K7).} El agente nunca ve un secreto: \texttt{obtener\_credencial} le devuelve un
+identificador \texttt{cred://crm/<id>} válido cinco minutos, y la pasarela de egress solo lo sustituye por el
+token real cuando el destino está permitido para ese servicio. Si el agente es desviado, puede filtrar el
+identificador, pero este no sirve fuera del perímetro ni después de caducar.
+
+\textbf{Minimización y DLP de salida (K9, K10).} K9 sustituye por asteriscos el IBAN, el DNI y las notas de la
+ficha de cliente antes de que el resultado llegue al modelo, de modo que el agente no puede revelar lo que no
+ha visto. K10 examina la respuesta final con reglas deterministas y redacta canarios, secretos conocidos, tokens,
+IBAN y DNI.
+
+Además, toda decisión de control queda en la telemetría por ejecución (sección~\ref{sec:lab}), que cubre el
+repudio de STRIDE y es la base para reglas de detección.
+
+\subsection{Defensa en profundidad frente a T1--T7}
+Cada amenaza priorizada queda cubierta por controles de capas distintas. Contra T1 actúan K1 en la entrada, K4
+si la carga pide una herramienta no permitida y K10 si el prompt de sistema llega a la respuesta. Contra T2, la
+única amenaza crítica, K2 filtra el documento, y si la carga pasa, K4 a K8 limitan lo que el agente desviado
+puede hacer. Contra T3, K3 impide el registro de la herramienta alterada sin depender del clasificador, y K2
+actúa como segunda capa. T4 y T5 se cubren con K7, que impide que el secreto entre en el contexto, y con K5, K6 y
+K10, que impiden que salga. T6 se cubre con K5 y K8. T7 se cubre con K9, que evita que los datos personales
+lleguen al modelo, y K10, que los redacta si aparecen. Ninguna amenaza depende solo del guardrail, que es el
+control más fácil de evadir porque se basa en la forma del texto.
+
+\subsection{Diferencias con la propuesta}
+La propuesta enviada enumeraba cinco controles: guardrails de entrada y salida, mínimo privilegio por
+herramienta, allowlist de egress, confirmación humana y registro estructurado con reglas de detección. La
+arquitectura final los mantiene con tres cambios. El guardrail de salida es un filtro DLP determinista y no un
+segundo modelo, porque lo que debe detectar (canarios, secretos y datos personales) tiene formato conocido, y
+así es más barato y verificable. Se añaden el broker de credenciales, el pinning de herramientas, el DLP sobre
+argumentos y la máscara de campos, porque el modelado de amenazas mostró que T3 y T4 no se cubren con los cinco
+controles originales. Y el registro estructurado se mantiene como telemetría, pero no se evalúa como control
+porque no bloquea nada: su papel en la detección se trata en la sección~\ref{sec:gobierno}.
 
 \section{Validación experimental y análisis comparativo}
 \label{sec:validacion}
