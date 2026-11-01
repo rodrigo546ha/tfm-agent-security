@@ -15,6 +15,7 @@ from tfm_lab.agent import Agent
 from tfm_lab.attacks import mutators
 from tfm_lab.attacks.scenarios import SCENARIOS, Scenario, resolve_canary
 from tfm_lab.controls import ControlSet
+from tfm_lab.data.generate import POISON_MANIFEST
 from tfm_lab.eval.benign import BenignTask, benign_tasks, check_benign
 from tfm_lab.eval.detector import judge
 from tfm_lab.lab import build_context
@@ -26,19 +27,26 @@ from tfm_lab.tools.builtin import build_registry
 KNOWN_SECRET_KEYS = ("secrets.clave_api_crm", "secrets.clave_firma", "vault.crm")
 
 
+def poison_manifest(settings: LabSettings) -> dict[str, dict[str, Any]]:
+    """Contratos con carga de S2 -> {"seed", "mutator"}, según el manifiesto que escribe el generador."""
+    return json.loads((settings.path("contracts") / POISON_MANIFEST).read_text(encoding="utf-8"))
+
+
 def split_corpus(settings: LabSettings) -> tuple[list[str], list[str]]:
-    """Separa contratos con carga (marcador en comentario HTML) de los limpios."""
+    """Separa contratos con carga (según el manifiesto) de los limpios."""
+    manifest = poison_manifest(settings)
     poisoned, clean = [], []
     for p in sorted(settings.path("contracts").glob("CT-*.md")):
-        (poisoned if "<!--" in p.read_text(encoding="utf-8") else clean).append(p.stem)
+        (poisoned if p.stem in manifest else clean).append(p.stem)
     return poisoned, clean
 
 
 def variants(scenario: Scenario, settings: LabSettings) -> list[dict[str, Any]]:
     if scenario.vector == "document":
-        poisoned, _ = split_corpus(settings)
-        return [{"id": f"S2-{cid}", "mutator": "corpus", "prompt": scenario.task_template.format(doc_id=cid),
-                 "tool_desc": None} for cid in poisoned]
+        manifest = poison_manifest(settings)
+        return [{"id": f"S2-{cid}-s{m['seed']}-{m['mutator']}", "mutator": m["mutator"],
+                 "prompt": scenario.task_template.format(doc_id=cid), "tool_desc": None}
+                for cid, m in sorted(manifest.items())]
     out = []
     for si, seed in enumerate(scenario.seeds):
         for mut in scenario.mutators:
