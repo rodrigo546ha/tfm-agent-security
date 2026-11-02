@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from tfm_lab.agent import Agent
+from tfm_lab.agent import Agent, AgentResult
 from tfm_lab.attacks import mutators
 from tfm_lab.attacks.scenarios import SCENARIOS, Scenario, resolve_canary
 from tfm_lab.controls import ControlSet
@@ -71,6 +71,16 @@ def _agent(llm: LLMBackend, settings: LabSettings, cfg_name: str, tel: Telemetry
     return Agent(llm, reg, controls, ctx, max_steps=settings.agent["max_steps"], telemetry=tel), ctx
 
 
+def controls_fired(r: AgentResult) -> list[str]:
+    """Controles que intervinieron en una ejecución, para atribuir cada bloqueo a su control (capítulo 8)."""
+    fired = ["input_guard"] if r.blocked_input else []
+    fired += ["pinning" if "pinning" in why else "description_guard" for why in r.rejected_tools.values()]
+    fired += ["tool_result_guard"] if r.any_sanitized else []
+    fired += [c.control for c in r.tool_calls if not c.allowed]  # least_privilege, egress_allowlist, dlp_args, hitl
+    fired += ["output_dlp"] if r.output_findings else []
+    return sorted(set(fired))
+
+
 def run_attack(llm, settings, cfg_name: str, scenario: Scenario, v: dict[str, Any], tel: Telemetry) -> dict:
     extra = [{"name": scenario.extra_tool, "description": v["tool_desc"]}] if v["tool_desc"] else None
     agent, ctx = _agent(llm, settings, cfg_name, tel, extra)
@@ -81,7 +91,7 @@ def run_attack(llm, settings, cfg_name: str, scenario: Scenario, v: dict[str, An
         "attack_success": j.success, "signals": j.signals, "canaries_leaked": j.canaries_leaked,
         "forbidden_executed": j.forbidden_executed, "untrusted_egress": j.untrusted_egress,
         "blocked_input": r.blocked_input, "denied_tool": r.any_denied, "sanitized_result": r.any_sanitized,
-        "rejected_tools": list(r.rejected_tools), "output_findings": r.output_findings,
+        "rejected_tools": list(r.rejected_tools), "output_findings": r.output_findings, "controls": controls_fired(r),
         "tools_called": [c.name for c in r.tool_calls], "steps": r.steps, "latency_s": r.latency_s,
         "truncated": r.truncated, "error": r.error,
     }
@@ -96,7 +106,8 @@ def run_benign(llm, settings, cfg_name: str, task: BenignTask, idx: int, tel: Te
     return {"kind": "benign", "config": cfg_name, "scenario": "BENIGN", "variant": f"B-{idx:02d}",
             "mutator": "-", "template": task.template, "benign_ok": ok, "benign_reason": reason,
             "benign_blocked": blocked, "blocked_input": r.blocked_input, "denied_tool": r.any_denied,
-            "sanitized_result": r.any_sanitized, "tools_called": [c.name for c in r.tool_calls],
+            "sanitized_result": r.any_sanitized, "controls": controls_fired(r),
+            "tools_called": [c.name for c in r.tool_calls],
             "steps": r.steps, "latency_s": r.latency_s, "truncated": r.truncated, "error": r.error}
 
 
@@ -185,7 +196,7 @@ def run_campaign(configs: list[str] | None = None, scenarios: list[str] | None =
 
 def _write_summary(rows: list[dict[str, Any]], path: Path) -> None:
     keys = ["kind", "config", "scenario", "variant", "mutator", "attack_success", "benign_ok", "benign_reason",
-            "benign_blocked", "signals",
+            "benign_blocked", "signals", "controls",
             "blocked_input", "denied_tool", "sanitized_result", "forbidden_executed", "untrusted_egress",
             "steps", "latency_s", "truncated", "error"]
     with open(path, "w", newline="", encoding="utf-8") as fh:

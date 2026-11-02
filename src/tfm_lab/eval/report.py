@@ -101,6 +101,16 @@ def latency_table(df: pd.DataFrame) -> pd.DataFrame:
     return df.groupby("config")["latency_s"].describe(percentiles=[0.5, 0.95])[["mean", "50%", "95%"]].round(2)
 
 
+def latency_latex(lat: pd.DataFrame, out: Path) -> None:
+    lines = [r"\begin{tabular}{lccc}", r"\toprule", r"Configuración & Media (s) & Mediana (s) & P95 (s) \\",
+             r"\midrule"]
+    for cfg, r in lat.iterrows():
+        lines.append(f"{cfg} & {r['mean']:.1f} & {r['50%']:.1f} & {r['95%']:.1f} \\\\".replace(".", "{,}"))
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def plot_asr(df: pd.DataFrame, out: Path) -> None:
     import matplotlib
     matplotlib.use("Agg")
@@ -177,6 +187,45 @@ def breakdown_latex(df: pd.DataFrame, out: Path, cfg: str = "C0") -> None:
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+CONTROL_NAMES = {  # nombre en runs.jsonl -> fila de la tabla (IDs de la tabla de controles del capítulo 7)
+    "input_guard": "K1 Guardrail sobre el mensaje", "tool_result_guard": "K2 Guardrail sobre resultados",
+    "description_guard": "K2 Guardrail sobre descripciones", "pinning": "K3 Pinning de herramientas",
+    "least_privilege": "K4 Mínimo privilegio", "egress_allowlist": "K5 Allowlist de egress y correo",
+    "dlp_args": "K6 DLP en argumentos", "hitl": "K8 Confirmación humana", "output_dlp": "K10 DLP de salida",
+}
+
+
+def attribution(df: pd.DataFrame, base: str = "C0") -> pd.DataFrame:
+    """Para las variantes con éxito en la línea base: en cuántas interviene cada control en las demás
+    configuraciones (un ataque puede activar varios) y cuántas siguen con éxito."""
+    atk = df[df["kind"] == "attack"]
+    hits = set(atk[(atk["config"] == base) & atk["attack_success"].fillna(False).astype(bool)]["variant"])
+    sub = atk[(atk["config"] != base) & atk["variant"].isin(hits)]
+    rows = {name: {} for name in CONTROL_NAMES.values()}
+    rows["Siguen con éxito"] = {}
+    for cfg, g in sub.groupby("config"):
+        fired = g["controls"].apply(lambda c: c if isinstance(c, list) else [])
+        for key, name in CONTROL_NAMES.items():
+            rows[name][cfg] = int(fired.apply(lambda c, k=key: k in c).sum())
+        rows["Siguen con éxito"][cfg] = int(g["attack_success"].fillna(False).astype(bool).sum())
+    out = pd.DataFrame(rows).T.fillna(0).astype(int)
+    out.attrs["n"] = len(hits)
+    return out
+
+
+def attribution_latex(att: pd.DataFrame, out: Path) -> None:
+    cfgs = list(att.columns)
+    lines = [r"\begin{tabular}{l" + "c" * len(cfgs) + "}", r"\toprule",
+             "Control & " + " & ".join(cfgs) + r" \\", r"\midrule"]
+    for name, r in att.iterrows():
+        if name == "Siguen con éxito":
+            lines.append(r"\midrule")
+        lines.append(f"{name} & " + " & ".join(str(r[c]) for c in cfgs) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def main() -> None:
     s = load_settings()
     results = s.path("results")
@@ -199,11 +248,18 @@ def main() -> None:
               "normal): " + ", ".join(f"{c} {v}" for c, v in zip(cut["config"], cut["variant"], strict=True)))
     print("\n=== Latencia (s) ===")
     print(latency_table(df).to_string())
+    latency_latex(latency_table(df), s.root / "memoria" / "tablas" / "latencia.tex")
     asr_long(df).round(2).to_csv(results / "asr.csv", index=False)
     plot_asr(df, results / "asr.png")
     latex_table(df, s.root / "memoria" / "tablas" / "asr.tex")
     breakdown_latex(df, s.root / "memoria" / "tablas" / "c0_desglose.tex")
-    extra = " · memoria/tablas/c0_desglose.tex"
+    extra = " · memoria/tablas/c0_desglose.tex · memoria/tablas/latencia.tex"
+    if "controls" in df.columns:
+        att = attribution(df)
+        print(f"\n=== Controles que intervienen en los {att.attrs['n']} ataques con éxito en C0 ===")
+        print(att.to_string())
+        attribution_latex(att, s.root / "memoria" / "tablas" / "atribucion.tex")
+        extra += " · memoria/tablas/atribucion.tex"
     extra += " · memoria/tablas/benignas.tex" if not util.empty else ""
     print(f"\n-> {results / 'asr.csv'} · {results / 'asr.png'} · memoria/tablas/asr.tex{extra}")
 

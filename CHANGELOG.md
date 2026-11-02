@@ -5,9 +5,17 @@ Sirve como bitácora de reproducibilidad y como control de las 45-60 h compromet
 
 Las horas desde el 31 oct son estimaciones a partir de la actividad registrada en la sesión de Claude Code
 (intervalos sin más de 20 min de inactividad); las campañas desatendidas no cuentan. Las de septiembre se
-estiman a partir de las horas de los commits. Acumulado estimado: ~5 h.
+estiman a partir de las horas de los commits. Acumulado estimado: ~6 h.
 
 ## [No publicado]
+### 2026-11-02 — Capítulo 8 y atribución por control [~1h]
+- `runs.jsonl` registra en `controls` qué controles intervienen en cada ejecución; `make report` genera
+  `tablas/atribucion.tex` y `tablas/latencia.tex`. 41 tests.
+- Campaña completa repetida dos veces: mismo ASR, benignas y errores fila a fila. La primera tuvo la latencia de C0
+  contaminada por otro proceso; la segunda se lanzó con el equipo dedicado y vigilando `ollama ps`.
+- Capítulo 8 redactado (reducción del riesgo, qué control para cada ataque, los 2 éxitos de C2, utilidad y
+  latencia), comprobado frase a frase contra las tablas generadas.
+
 ### 2026-11-01 — Campaña completa, corpus de S2 y capítulo 4 [~1h]
 - Campaña completa (363 filas, 52 min). C2 para los 25 éxitos de C0, sin falsos bloqueos. Detectado que los 20
   contratos de S2 llevan la misma carga: S2 no es válido hasta corregir el generador.

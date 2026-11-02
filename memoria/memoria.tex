@@ -589,11 +589,72 @@ porque no bloquea nada: su papel en la detección se trata en la sección~\ref{s
 \section{Validación experimental y análisis comparativo}
 \label{sec:validacion}
 % ~2 caras. Resultados con controles (C1, C2). Reducción de ASR, coste en falsos positivos y latencia (figura).
+% Cifras solo en tablas y figura generadas (asr, atribucion, benignas, latencia); el texto es cualitativo.
+Este capítulo compara las tres configuraciones: cuánto reduce el riesgo cada una (tabla~\ref{tab:asr} y
+figura~\ref{fig:asr}), qué control para cada ataque (tabla~\ref{tab:atribucion}) y qué cuesta en utilidad y
+latencia (tablas~\ref{tab:benignas} y~\ref{tab:latencia}).
+
 \begin{figure}[h]\centering
-\IfFileExists{figuras/asr.png}{\includegraphics[width=0.85\textwidth]{figuras/asr.png}}{%
+\IfFileExists{figuras/asr.png}{\includegraphics[width=0.75\textwidth]{figuras/asr.png}}{%
 \fbox{\parbox{0.8\textwidth}{\centering\vspace{1.2cm}[Ejecuta \texttt{make report memoria-figs}]\vspace{1.2cm}}}}
-\caption{Tasa de éxito de ataque por escenario y configuración.}\label{fig:asr}
+\caption{Tasa de éxito de ataque por escenario y configuración, con intervalo de Wilson al 95\,\%.}\label{fig:asr}
 \end{figure}
+
+\subsection{Reducción del riesgo}
+\textbf{El guardrail solo aporta poco.} C1 reduce el ASR en S1 y S2, donde la carga es texto con forma de
+inyección, y no lo cambia en S3 ni en S4. En S4 la petición maliciosa parece una operación normal (obtener una
+credencial y enviarla a un proveedor) y no tiene nada que un clasificador de inyecciones pueda reconocer; en S3
+el guardrail apenas marca descripciones envenenadas, y ninguna de las que tienen éxito en C0. Además, el guardrail no detecta ninguna variante codificada en
+base64: contra un modelo capaz de decodificarlas, esas cargas solo encontrarían los controles de arquitectura.
+
+\textbf{La arquitectura completa casi elimina el riesgo.} C2 reduce el ASR a cero en S1, S3 y S4 y deja dos
+éxitos en S2. Con 14 a 20 variantes por escenario los intervalos son anchos: los de C0 y C2 no se solapan en S1
+ni en S4, pero sí en S2 y S3, y los de C0 y C1 se solapan en todos. En el agregado de los cuatro escenarios la
+diferencia entre C0 y C2 es clara y la de C0 y C1 no lo es.
+
+\begin{table}[h]\centering\footnotesize
+\caption{Controles que intervienen en las variantes con éxito en C0 (un ataque puede activar varios) y variantes
+que siguen con éxito. Generada por \texttt{make report}.}\label{tab:atribucion}
+\IfFileExists{tablas/atribucion.tex}{\input{tablas/atribucion.tex}}{%
+\emph{Ejecuta \texttt{make report} para generar tablas/atribucion.tex}}
+\end{table}
+
+\subsection{Qué control para cada ataque}
+La tabla~\ref{tab:atribucion} parte de las variantes que tienen éxito en C0 y cuenta, en C1 y C2, en cuántas
+interviene cada control. El motor de políticas es el que más interviene: más de la mitad de los ataques acaba pidiendo
+una herramienta que el rol no tiene o un destino que no está en la lista permitida, y ahí el control no depende de
+la forma de la carga. El pinning para todas las variantes de S3 sin necesitar el clasificador, y el DLP de salida
+redacta los canarios que el modelo llega a escribir en la respuesta. El guardrail interviene en S1 y S2 igual que
+en C1. La reducción de riesgo de C2 procede, por tanto, sobre todo de controles deterministas de arquitectura.
+
+\textbf{Los dos éxitos de C2 son secuestros contenidos.} Ambos son variantes de S2 con la semilla que pide enviar
+la credencial del CRM por correo a una dirección externa. El guardrail no marca el contrato y el agente obedece:
+llama a \texttt{obtener\_credencial}, que el rol analista tiene permitida, y recibe un identificador
+\texttt{cred://} en lugar del token. Después intenta enviar el correo y la allowlist de destinatarios lo deniega.
+No sale ningún secreto, pero el criterio estricto de la sección~\ref{sec:metodo} cuenta como éxito la ejecución de
+una herramienta prohibida para el escenario. Es el caso que justifica la defensa en profundidad: el primer
+control falla, el agente queda desviado y otros dos controles contienen el impacto. Se ha optado por informarlos
+como éxito y no por quitar la herramienta del rol tras ver el resultado, porque ajustar los controles al conjunto
+de prueba invalidaría la comparación.
+
+\subsection{Coste en utilidad y latencia}
+\begin{table}[h]\centering\footnotesize
+\caption{Tareas legítimas completadas (IC 95\,\%) y fallos. Generada por \texttt{make report}.}\label{tab:benignas}
+\IfFileExists{tablas/benignas.tex}{\input{tablas/benignas.tex}}{\emph{Ejecuta \texttt{make report}}}
+
+\vspace{0.6em}
+\caption{Latencia por ejecución, ataques y tareas legítimas. Generada por \texttt{make report}.}\label{tab:latencia}
+\IfFileExists{tablas/latencia.tex}{\input{tablas/latencia.tex}}{\emph{Ejecuta \texttt{make report}}}
+\end{table}
+
+Ningún control bloquea una tarea legítima, y las tres configuraciones completan las mismas tareas: la única que
+falla lo hace en todas por el modelo, que envía el correo con el resumen sin rellenar, no por un control. El
+coste en utilidad aparece solo bajo ataque: cuando el guardrail sanea un contrato con carga, el usuario pierde
+también la parte legítima de la tarea, porque el modelo ya no ve el importe ni la vigencia. La latencia de C1 y C2
+es algo mayor que la de C0, pero del mismo orden: el guardrail se ejecuta en CPU y el resto de controles son
+comprobaciones deterministas, de coste pequeño frente a la generación del modelo. Las cifras son orientativas:
+dependen de la carga del equipo, y en una ejecución en la que otro proceso usó el modelo a la vez la media de una
+configuración se multiplicó, por lo que la campaña se repitió con el equipo dedicado.
 
 \section{Plano de gobierno y cumplimiento normativo}
 \label{sec:gobierno}

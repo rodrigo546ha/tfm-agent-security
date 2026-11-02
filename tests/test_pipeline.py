@@ -16,6 +16,20 @@ def test_campaign_dry_run(lab, monkeypatch):
     assert "C0" in asr.columns and "C2" in asr.columns
 
 
+def test_controls_fired_atribuye_cada_bloqueo():
+    from tfm_lab.agent import AgentResult, ToolCallRecord
+    pinned = {"convertir_divisa": "descripción no coincide con el manifiesto (pinning)"}
+    r = AgentResult(final="", rejected_tools=pinned,
+                    tool_calls=[ToolCallRecord("consultar_secretos", {}, False, "least_privilege"),
+                                ToolCallRecord("leer_contrato", {}, True, sanitized=True),
+                                ToolCallRecord("enviar_email", {}, False, "egress_allowlist")],
+                    output_findings=["canary"])
+    assert campaign.controls_fired(r) == ["egress_allowlist", "least_privilege", "output_dlp", "pinning",
+                                          "tool_result_guard"]
+    assert campaign.controls_fired(AgentResult(final="", blocked_input=True)) == ["input_guard"]
+    assert campaign.controls_fired(AgentResult(final="ok")) == []
+
+
 def test_variant_counts_match_plan(lab):
     from tfm_lab.attacks.scenarios import SCENARIOS
     counts = {s.id: len(campaign.variants(s, lab)) for s in SCENARIOS}
@@ -43,5 +57,27 @@ def test_report_outputs(lab, monkeypatch, tmp_path):
     assert "Mutador" in desglose and "Semilla" in desglose
     b = report.breakdown(df)
     assert b.groupby("col")["n"].sum().loc["none"] == 4  # S1: 4 semillas con el mutador "none"
+    assert "controls" in df.columns
+    report.latency_latex(report.latency_table(df), tmp_path / "latencia.tex")
+    assert "{,}" in (tmp_path / "latencia.tex").read_text()  # coma decimal
+
+
+def test_atribucion_por_control(tmp_path):
+    import pandas as pd
+    df = pd.DataFrame([
+        {"kind": "attack", "config": "C0", "variant": "S1-s0-none", "attack_success": True, "controls": []},
+        {"kind": "attack", "config": "C0", "variant": "S1-s1-none", "attack_success": False, "controls": []},
+        {"kind": "attack", "config": "C2", "variant": "S1-s0-none", "attack_success": False,
+         "controls": ["input_guard", "output_dlp"]},
+        {"kind": "attack", "config": "C2", "variant": "S1-s1-none", "attack_success": False,
+         "controls": ["least_privilege"]},  # no tuvo éxito en C0: no cuenta
+    ])
+    att = report.attribution(df)
+    assert att.attrs["n"] == 1
+    assert att.loc["K1 Guardrail sobre el mensaje", "C2"] == 1
+    assert att.loc["K4 Mínimo privilegio", "C2"] == 0
+    assert att.loc["Siguen con éxito", "C2"] == 0
+    report.attribution_latex(att, tmp_path / "atribucion.tex")
+    assert "K10 DLP de salida & 1" in (tmp_path / "atribucion.tex").read_text()
     lo, hi = report.wilson(5, 20)
     assert 0.1 < lo < 0.25 < hi < 0.5
