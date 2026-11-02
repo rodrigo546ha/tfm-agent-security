@@ -5,10 +5,10 @@ Sirve como bitácora de reproducibilidad y como control de las 45-60 h compromet
 
 Las horas desde el 31 oct son estimaciones a partir de la actividad registrada en la sesión de Claude Code
 (intervalos sin más de 20 min de inactividad); las campañas desatendidas no cuentan. Las de septiembre se
-estiman a partir de las horas de los commits. Acumulado estimado: ~9 h.
+estiman a partir de las horas de los commits. Acumulado estimado: ~9,5 h.
 
 ## [No publicado]
-### 2026-11-02 — Capítulos 2, 8, 9 y 10, atribución por control, promptfoo [~4h]
+### 2026-11-02 — Capítulos 1, 2, 8, 9 y 10, atribución por control, promptfoo [~4,5h]
 - `runs.jsonl` registra en `controls` qué controles intervienen en cada ejecución; `make report` genera
   `tablas/atribucion.tex` y `tablas/latencia.tex`. 41 tests.
 - Campaña completa repetida dos veces: mismo ASR, benignas y errores fila a fila. La primera tuvo la latencia de C0
@@ -25,6 +25,7 @@ estiman a partir de las horas de los commits. Acumulado estimado: ~9 h.
   cambio y telemetría como base de detección. Cinco entradas nuevas en `referencias.bib`.
 - Capítulo 2 redactado con 12 fuentes nuevas comprobadas en origen. Corregidas las entradas de CSA y ENISA, que
   no apuntaban a ningún documento concreto.
+- Capítulo 1 redactado; la motivación personal queda como borrador para el autor. Memoria completa: ~15 caras.
 
 ### 2026-11-01 — Campaña completa, corpus de S2 y capítulo 4 [~1h]
 - Campaña completa (363 filas, 52 min). C2 para los 25 éxitos de C0, sin falsos bloqueos. Detectado que los 20

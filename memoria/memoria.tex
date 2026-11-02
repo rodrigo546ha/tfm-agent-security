@@ -77,10 +77,11 @@
 superficie de ataque clásica del \emph{prompt injection} hacia la ejecución de acciones: consulta de datos,
 navegación web, envío de correo y uso de credenciales. Este trabajo propone una \textbf{arquitectura de
 seguridad de referencia} para este tipo de agentes, construida a partir de un modelado de amenazas
-(PASTA + STRIDE) mapeado a \atlas{MITRE ATLAS} y a \atlas{OWASP Agentic Security Top~10 2026}, y la
+(PASTA + STRIDE) mapeado a \atlas{MITRE ATLAS} y al \emph{OWASP Top 10 for Agentic Applications 2026}, y la
 \textbf{valida experimentalmente} en un laboratorio local y de coste cero. Se somete a un agente objetivo a
 cuatro escenarios de ataque bajo tres configuraciones de control y se mide la tasa de éxito de ataque (ASR)
-mediante detección determinista por canarios, junto con la tasa de bloqueo de tareas legítimas y la latencia.
+mediante detección determinista por canarios, junto con las tareas legítimas bloqueadas y completadas y la
+latencia.
 Los resultados cuantifican la reducción de riesgo aportada por cada control y se sintetizan en un plano de
 gobierno alineado con el marco regulatorio aplicable.
 
@@ -101,16 +102,58 @@ modelado de amenazas, red teaming.
 % ~1,5 caras. Contexto: adopción de agentes LLM con herramientas; el riesgo se desplaza de "decir" a "hacer".
 % Motivación personal/profesional (FDE en agentes con tool-calling). Pregunta de investigación:
 % ¿cuánto reduce el riesgo cada control de la arquitectura, y a qué coste en usabilidad y latencia?
+Las organizaciones están pasando de usar los modelos de lenguaje como asistentes que responden preguntas a
+desplegarlos como agentes que leen documentos, consultan bases de datos y ejecutan acciones mediante
+herramientas: enviar un correo, llamar a una API, obtener una credencial. Ese paso cambia la naturaleza del
+riesgo. Un asistente que solo conversa puede decir algo indebido; un agente con herramientas puede
+\emph{hacerlo}, y con los permisos de quien lo despliega. El problema de fondo es conocido: el modelo no separa de
+forma fiable las instrucciones de los datos que procesa, de modo que un texto que llega por un documento, una
+página web o la descripción de una herramienta puede cambiar lo que el agente hace~\cite{greshake2023,owasp_asi_2026}.
+Ya hay vulnerabilidades de este tipo en productos comerciales (sección~\ref{sec:sota}).
+
+\subsection{Motivación}
+% REVISAR (autor): párrafo de motivación personal redactado como borrador; ajustarlo a la experiencia real.
+La motivación del trabajo es profesional. El autor trabaja en el despliegue de agentes con llamadas a
+herramientas, donde la pregunta habitual no es si un modelo puede ser engañado, que se da por hecho, sino qué
+controles hay que poner alrededor del agente, cuánto protegen y qué cuestan en utilidad. Las guías disponibles
+enumeran riesgos y controles, pero rara vez cuantifican la aportación de cada control sobre un mismo sistema.
+Este trabajo intenta dar esa respuesta con un experimento reproducible.
+
+\textbf{Pregunta de investigación.} Cuando un agente LLM puede leer documentos, consultar datos y ejecutar
+acciones, ¿cuánto reduce el riesgo cada control de una arquitectura de referencia, y a qué coste en usabilidad
+(tareas legítimas bloqueadas o no completadas) y en latencia?
+
 \subsection{Objetivos}
 \begin{itemize}
-  \item O1: modelar las amenazas de un agente LLM con herramientas y priorizarlas con ATLAS/OWASP ASI.
-  \item O2: diseñar una arquitectura de seguridad de referencia con controles concretos y justificados.
-  \item O3: validar experimentalmente su eficacia (ASR) frente a una línea base sin controles.
-  \item O4: derivar un plano de gobierno y cumplimiento accionable.
+  \item O1: modelar las amenazas de un agente LLM con herramientas y priorizarlas con MITRE ATLAS y el Top~10 de
+        OWASP para aplicaciones agénticas (sección~\ref{sec:threat}).
+  \item O2: diseñar una arquitectura de seguridad de referencia con controles concretos y justificados frente a
+        esas amenazas (sección~\ref{sec:arquitectura}).
+  \item O3: validar experimentalmente su eficacia, medida como tasa de éxito de ataque (ASR), frente a una línea
+        base sin controles, junto con su coste en tareas legítimas y latencia
+        (secciones~\ref{sec:baseline} y~\ref{sec:validacion}).
+  \item O4: derivar un plano de gobierno y cumplimiento accionable (sección~\ref{sec:gobierno}).
 \end{itemize}
+
 \subsection{Alcance y contribuciones}
-% Qué entra y qué no (sin fine-tuning; modelos ~8B locales). Contribución: arquitectura + laboratorio
-% reproducible y de coste cero + métrica determinista por canario.
+El trabajo se limita a un agente con un único rol, nueve herramientas simuladas y datos sintéticos, que usa un
+modelo abierto de 8B parámetros ejecutado en local, sin reentrenamiento. Se estudian cuatro escenarios de ataque:
+inyección directa, inyección indirecta a través de un documento, envenenamiento de la descripción de una
+herramienta y robo de credenciales con exfiltración. Quedan fuera los sistemas con varios agentes, la memoria
+persistente, la ejecución de código y los ataques al propio modelo, como el envenenamiento del entrenamiento
+(sección~\ref{sec:threat}). Todo se ejecuta en un único equipo, sin servicios de pago.
+
+Las contribuciones son tres: (1) un modelo de amenazas de un agente con herramientas mapeado a MITRE ATLAS y a
+OWASP; (2) una arquitectura de referencia de diez controles, la mayoría deterministas; y (3) un laboratorio
+local, reproducible con una sola orden y de coste cero, que mide la eficacia de cada configuración con una
+métrica determinista basada en canarios, sin un modelo como juez, y atribuye cada bloqueo al control que lo
+produjo.
+
+\textbf{Estructura.} La sección~\ref{sec:sota} revisa el estado del arte y la~\ref{sec:metodo} la metodología. La
+\ref{sec:threat} describe el sistema objetivo y su modelo de amenazas, y la~\ref{sec:lab} el laboratorio. La
+\ref{sec:baseline} presenta los escenarios y la línea base, la~\ref{sec:arquitectura} la arquitectura de
+referencia y la~\ref{sec:validacion} su validación. La~\ref{sec:gobierno} la sitúa en el marco de gobierno y
+la~\ref{sec:conclusiones} cierra con las conclusiones y limitaciones.
 
 \section{Estado del arte}
 \label{sec:sota}

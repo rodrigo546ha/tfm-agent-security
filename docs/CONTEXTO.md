@@ -156,7 +156,10 @@ riesgo del Anexo III aplazado a dic 2027 por el Reglamento (UE) 2026/1744).
   a NIST AI RMF y Reglamento de IA, calendario de obligaciones, gobierno del cambio y telemetría como base de
   detección. **Capítulo 2 redactado** (2 nov, ~1,6 caras de 2,5): ataques (directa, indirecta,
   InjecAgent, AgentDojo, tool poisoning con MCPTox, CVE-2025-32711), taxonomías, defensas (detectores,
-  spotlighting, CaMeL y patrones de diseño) y herramientas (garak, PyRIT, promptfoo). Queda el 1. PDF: 21 páginas. Holgura acumulada frente al presupuesto: ~3 caras. `make report` genera además `tablas/c0_desglose.tex` (C0 por mutador y por semilla); el texto del
+  spotlighting, CaMeL y patrones de diseño) y herramientas (garak, PyRIT, promptfoo). **Capítulo 1 redactado** (2 nov, ~1,1 caras de 1,5): contexto, motivación (párrafo
+  personal marcado `% REVISAR (autor)`), pregunta, O1-O4 con su capítulo, alcance, contribuciones y estructura.
+  Resumen corregido (nombre oficial de OWASP y tareas completadas). **Los 10 capítulos están redactados**: cuerpo
+  de ~15 caras (pág. 3-17 del PDF) frente al máximo de 20. PDF: 21 páginas. Holgura acumulada frente al presupuesto: ~3 caras. `make report` genera además `tablas/c0_desglose.tex` (C0 por mutador y por semilla); el texto del
   capítulo 6 es cualitativo y remite a las tablas. Hallazgo para el 8 y el 10: en S4 con la semilla 1 el modelo
   manda el correo al externo "con la credencial adjunta" sin incluirla (éxito por egress, sin fuga). Fuentes nuevas comprobadas en Crossref/Open Library/RFC Editor:
   PASTA (UcedaVélez y Morana 2015), STRIDE (Shostack 2014), Wilson 1927, Brown-Cai-DasGupta 2001, RFC 2606.
@@ -185,7 +188,8 @@ por la GPU, 9 herramientas, controles finales y estado de las reglas de detecci�
    S3 (25 %, documentado como resultado), falso bloqueo de C1 0 %, única fila con error `S4-s1-base64` (aceptada).
 2. El DFD (figura 1) a ancho completo tiene etiquetas pequeñas: valorar redibujarlo más compacto.
 3. Revisar los capítulos 3 a 7 (en el 4, las prioridades P/I a priori son juicio del autor: confirmarlas).
-   Siguiente capítulo: 1 (introducción; ~1,5 caras, holgura disponible). Fuentes del 2 comprobadas el 2 nov en
+   Memoria completa en borrador. Siguiente: revisión de conjunto por el autor (empezar por el párrafo de
+   motivación del capítulo 1, que es suyo), anexo B (semillas y mutadores) y anexo C (telemetría y capturas). Fuentes del 2 comprobadas el 2 nov en
    origen (arXiv, NVD con el navegador, ENISA, CSA, Invariant Labs, ficha de Prompt Guard 2). Corregidas las
    entradas `csa_tool_poisoning_2026` y `enisa_ai`, que eran títulos sin comprobar con la página principal: ahora
    son la nota de CSA del 1 jul 2026 y el marco multicapa de ENISA (7 jun 2023). La nota de CSA atribuye MCPTox a
