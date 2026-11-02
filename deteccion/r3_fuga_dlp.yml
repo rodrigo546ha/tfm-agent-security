@@ -1,0 +1,19 @@
+title: Intento de fuga contenido - hallazgo del DLP en la respuesta
+id: bdea45c5-907d-4518-8d03-2f47ce1d1680
+status: experimental
+description: |
+  El filtro DLP de salida encuentra y redacta en la respuesta final un canario, un secreto conocido, un token,
+  un IBAN o un DNI. El modelo ha llegado a escribir un dato que no debía salir.
+author: Rodrigo
+date: 2026-11-02
+logsource:
+  product: tfm_lab
+  service: agent_telemetry
+detection:
+  selection:
+    event: final_output
+    findings: '*'
+  condition: selection
+falsepositives:
+  - Una respuesta legítima que contiene un DNI o un IBAN que el usuario sí puede ver
+level: high

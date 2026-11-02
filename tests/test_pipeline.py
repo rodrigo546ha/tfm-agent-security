@@ -131,3 +131,41 @@ def test_anexos_generados_desde_codigo_y_telemetria(tmp_path):
     out = (tmp_path / "ev.tex").read_text()
     assert r"nueva 100\%" in out and "antigua" not in out and "0{,}0004" in out
     assert r"egress\_\allowbreak{}allowlist" in out  # punto de corte tras _ para que no se salga del margen
+
+
+def test_reglas_de_deteccion_sobre_telemetria(tmp_path):
+    import json
+    from pathlib import Path
+
+    import pandas as pd
+
+    from tfm_lab.eval import deteccion
+    rules = deteccion.load_rules(Path(__file__).resolve().parents[1] / "deteccion")
+    assert set(deteccion.MEASURED) <= set(rules) and len(rules) == 3
+    r1, r3 = rules["r1_egress_denegado"], rules["r3_fuga_dlp"]
+    denied = {"event": "tool_call", "allowed": False, "control": "egress_allowlist"}
+    assert deteccion.matches(r1, denied)
+    assert not deteccion.matches(r1, {**denied, "allowed": True})
+    assert not deteccion.matches(r1, {**denied, "control": "least_privilege"})
+    assert deteccion.matches(r3, {"event": "final_output", "findings": ["canary"]})
+    assert not deteccion.matches(r3, {"event": "final_output", "findings": []})  # '*' exige algún hallazgo
+    rule = {"detection": {"a": {"x|contains": "ABC"}, "b": {"y": [1, 2]}, "condition": "a and not (b or a)"}}
+    assert not deteccion.matches(rule, {"x": "zabcz", "y": 3})
+    assert deteccion.matches({"detection": {**rule["detection"], "condition": "a and not b"}}, {"x": "abc", "y": 3})
+    tel = tmp_path / "telemetry.jsonl"
+    ev = [{"run_id": "C2:S4-v", "event": "user_input"}, {"run_id": "C2:S4-v", **denied},  # campaña antigua
+          {"run_id": "C2:S4-v", "event": "user_input"}, {"run_id": "C2:S4-v", "event": "final_output", "findings": []},
+          {"run_id": "C2:B-00", "event": "user_input"}, {"run_id": "C2:S1-v", "event": "user_input"},
+          {"run_id": "C2:S1-v", "event": "final_output", "findings": ["canary"]}]
+    tel.write_text("\n".join(json.dumps(e) for e in ev))
+    al = deteccion.alerts(tel, {k: rules[k] for k in deteccion.MEASURED})
+    assert not al.set_index("variant").loc["S4-v", "r1_egress_denegado"]  # solo cuenta la última ejecución
+    runs = pd.DataFrame([{"kind": "attack", "config": "C2", "variant": "S4-v", "attack_success": True},
+                         {"kind": "attack", "config": "C2", "variant": "S1-v", "attack_success": False},
+                         {"kind": "attack", "config": "C2", "variant": "S9-err", "attack_success": None},
+                         {"kind": "benign", "config": "C2", "variant": "B-00", "attack_success": None}])
+    tab = deteccion.detection_table(runs, al)
+    assert tab.loc["C2"].to_dict() == {"ataques": 2, "r1_egress_denegado": 0, "r3_fuga_dlp": 1, "alguna": 1,
+                                       "exitos": 1, "exitos_alerta": 0, "benignas": 1, "benignas_alerta": 0}
+    deteccion.detection_latex(tab, tmp_path / "det.tex")
+    assert "C2 & 2 & 0 & 1 & 1 & 0/1 & 0/1" in (tmp_path / "det.tex").read_text()

@@ -12,6 +12,7 @@ from pathlib import Path
 import pandas as pd
 
 from tfm_lab.eval.anexos import corpus_latex, evidence_latex
+from tfm_lab.eval.deteccion import alerts, detection_latex, detection_table, load_rules
 from tfm_lab.eval.promptfoo import load_results as load_promptfoo
 from tfm_lab.settings import load_settings
 
@@ -300,6 +301,12 @@ def main() -> None:
     if (results / "telemetry.jsonl").exists() and evidence_latex(results / "telemetry.jsonl",
                                                                  tablas / "anexo_evidencias.tex"):
         extra += " · memoria/tablas/anexo_evidencias.tex"
+    if (results / "telemetry.jsonl").exists() and (rules := load_rules(s.root / "deteccion")):
+        det = detection_table(df, alerts(results / "telemetry.jsonl", rules))
+        print("\n=== Reglas de detección sobre la telemetría (R2 no se mide: necesita correlación por usuario) ===")
+        print(det.to_string())
+        detection_latex(det, tablas / "deteccion.tex")
+        extra += " · memoria/tablas/deteccion.tex"
     extra += " · memoria/tablas/benignas.tex" if not util.empty else ""
     print(f"\n-> {results / 'asr.csv'} · {results / 'asr.png'} · memoria/tablas/asr.tex{extra}")
 

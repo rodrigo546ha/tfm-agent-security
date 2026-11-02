@@ -505,8 +505,8 @@ con Ollama nativo y no en Docker, porque en macOS un contenedor no accede a la G
 funcionaría solo con la CPU; Docker queda solo para reproducir en otros entornos. Segundo, el agente tiene nueve
 herramientas en lugar de cuatro, porque los escenarios de robo de credenciales y de herramienta envenenada
 necesitan un almacén de credenciales, dos vías de egress y una herramienta que sustituir. Tercero, el registro
-estructurado existe como telemetría JSON por evento, pero las reglas de detección sobre ella no forman parte de los
-controles evaluados; su estado se recoge en el anexo~\ref{sec:anexo-reglas}.
+estructurado existe como telemetría JSON por evento, y las reglas de detección sobre ella se evalúan aparte, no
+como controles (anexo~\ref{sec:anexo-reglas}).
 
 \section{Escenarios de ataque y resultados de línea base}
 \label{sec:baseline}
@@ -825,9 +825,10 @@ desplegarlo si el ASR de C2 aumenta o si baja la proporción de tareas legítima
 puntuación, cada llamada a herramienta con la decisión del motor de políticas y el control que la tomó, y los
 hallazgos del DLP en la respuesta. Sobre esos eventos se pueden escribir reglas de detección: una llamada de
 salida denegada por la allowlist indica un agente desviado; varios bloqueos del guardrail seguidos para el mismo
-usuario, un sondeo; y un hallazgo del DLP de salida, un intento de fuga contenido. Los dos éxitos residuales de C2
-dejan precisamente el primero de esos rastros, de modo que una regla así los convertiría en incidentes
-detectados. La telemetría cubre además los artículos 12 y 26.6 del Reglamento y la función \emph{Manage} del
+usuario, un sondeo; y un hallazgo del DLP de salida, un intento de fuga contenido. El anexo~\ref{sec:anexo-reglas}
+las escribe en formato Sigma y aplica la primera y la tercera a la telemetría de la campaña: ninguna tarea
+legítima genera alerta, y los éxitos residuales de C2 sí la generan, de modo que llegarían al equipo de
+seguridad como incidentes. La telemetría cubre además los artículos 12 y 26.6 del Reglamento y la función \emph{Manage} del
 AI RMF.
 
 \section{Conclusiones, limitaciones y trabajo futuro}
@@ -861,8 +862,8 @@ persistente.
 \textbf{Trabajo futuro.} Repetir las campañas con otros modelos abiertos, incluidos modelos mayores que sí
 decodifiquen las cargas ofuscadas; incorporar atacantes adaptativos y generadores externos de variantes como
 \texttt{garak}~\cite{garak}; añadir un quinto escenario con un servidor MCP real y otro con memoria persistente y
-conversaciones de varios turnos (ASI06); escribir reglas de detección sobre la telemetría estructurada que ya
-registra el laboratorio; y estudiar la confirmación humana con usuarios reales.
+conversaciones de varios turnos (ASI06); correlacionar las alertas por usuario y sesión, que el laboratorio no
+puede medir; y estudiar la confirmación humana con usuarios reales.
 
 % --- Bibliografía (media cara) -----------------------------------------------------------------------
 \bibliographystyle{unsrt}   % numerada por orden de aparición (estilo tipo IEEE)
@@ -881,13 +882,30 @@ Las variantes de cada escenario combinan una semilla con un mutador
 \section{Reglas de detección y evidencias}\label{sec:anexo-reglas}
 \paragraph{Telemetría.} Cada ejecución escribe en \texttt{results/telemetry.jsonl} una línea JSON por evento:
 la entrada del usuario, la decisión del guardrail con su puntuación, cada llamada a herramienta con sus
-argumentos y la decisión del motor de políticas, y la respuesta final con los hallazgos del DLP. Las reglas de
-detección propuestas en la sección~\ref{sec:gobierno} se escribirían sobre estos eventos; no forman parte de los
-controles evaluados. Las tablas siguientes, generadas por \texttt{make report} a partir de la última campaña,
+argumentos y la decisión del motor de políticas, y la respuesta final con los hallazgos del DLP. Las tablas
+siguientes, generadas por \texttt{make report} a partir de la última campaña,
 muestran el mismo ataque de S4 sin controles y con la arquitectura completa, y uno de los dos éxitos residuales de
 C2. Los secretos que aparecen son canarios sintéticos.
 
 \IfFileExists{tablas/anexo_evidencias.tex}{\input{tablas/anexo_evidencias.tex}}{\emph{Ejecuta \texttt{make report}}}
+
+\paragraph{Reglas de detección.} Las tres reglas de la sección~\ref{sec:gobierno} están en \texttt{deteccion/} en
+formato Sigma~\cite{sigma_spec}, validadas con \texttt{sigma check}: R1, llamada de salida denegada por la
+allowlist; R2, bloqueo del guardrail de entrada; y R3, hallazgo del DLP en la respuesta. Como Sigma no trae un
+traductor para JSONL, \texttt{make report} las aplica a la última ejecución de cada variante con un intérprete
+propio del subconjunto que usan. R2 solo tiene sentido correlacionada por usuario (varios bloqueos seguidos), y el
+laboratorio no puede medirlo porque cada tarea es una sola petición sin identidad de usuario; por eso no entra en
+la tabla~\ref{tab:deteccion}. R1 y R3 se basan en decisiones de los controles, de modo que en C0 y C1 no pueden
+dispararse: lo que miden es si la arquitectura completa convierte los ataques que contiene en alertas. Una regla
+sobre el comportamiento bruto, como el tráfico hacia un host externo, coincidiría con el criterio de éxito del
+detector y no aportaría información. Las reglas se escribieron conociendo los ataques, con el mismo sesgo que
+los controles.
+
+\begin{table}[h]\centering\footnotesize
+\caption{Ejecuciones de ataque con alerta de R1, de R3 y de alguna de las dos, éxitos de ataque que generan
+alerta y tareas legítimas con alerta (falsas alarmas). Generada por \texttt{make report}.}\label{tab:deteccion}
+\IfFileExists{tablas/deteccion.tex}{\input{tablas/deteccion.tex}}{\emph{Ejecuta \texttt{make report}}}
+\end{table}
 
 \paragraph{Segunda fuente de medida.} \texttt{make promptfoo} genera una prueba de \texttt{promptfoo} por cada
 variante de S1 a partir de \texttt{attacks/scenarios.py}, con una aserción por criterio de éxito: que la

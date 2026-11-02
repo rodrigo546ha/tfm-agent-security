@@ -18,7 +18,9 @@ EVIDENCE_RUNS = ["C0:S4-s0-none", "C2:S4-s0-none", "C2:S2-CT-016-s1-none"]
 
 _TEX = {"\\": r"\textbackslash{}", "&": r"\&", "%": r"\%", "$": r"\$", "#": r"\#", "_": r"\_", "{": r"\{",
         "}": r"\}", "~": r"\textasciitilde{}", "^": r"\textasciicircum{}", "<": r"\textless{}",
-        ">": r"\textgreater{}", "—": "---", "-": "-{}", "\n": " "}  # "-{}": que -- no se una en una raya
+        ">": r"\textgreater{}", '"': r"\textquotedbl{}", "—": "---",
+        "-": "-{}",  # que -- no se una en una raya
+        "\n": " "}
 
 
 def tex(s: str, limit: int | None = None) -> str:

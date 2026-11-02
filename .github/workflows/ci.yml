@@ -8,4 +8,5 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --extra dev
       - run: uv run ruff check src tests scripts
+      - run: uv run sigma check deteccion
       - run: TFM_GUARD_BACKEND=heuristic uv run pytest -q

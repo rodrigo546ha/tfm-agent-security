@@ -1,0 +1,21 @@
+title: Sondeo - bloqueos repetidos del guardrail de entrada
+id: f126c2af-bfd1-49ff-8261-23700cd1af73
+status: experimental
+description: |
+  Varios mensajes del mismo usuario bloqueados por el guardrail en poco tiempo indican que alguien prueba
+  variantes de una inyección. La correlación por usuario no se mide en el laboratorio: cada tarea es una sola
+  petición y la telemetría no registra la identidad del usuario. Esta regla solo marca cada bloqueo; la
+  agregación por usuario (por ejemplo, tres en diez minutos) queda para un despliegue real.
+author: Rodrigo
+date: 2026-11-02
+logsource:
+  product: tfm_lab
+  service: agent_telemetry
+detection:
+  selection:
+    event: guard_input
+    blocked: true
+  condition: selection
+falsepositives:
+  - Textos legítimos con forma de instrucción que el clasificador marca por error
+level: medium

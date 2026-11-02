@@ -38,8 +38,9 @@ chat:  ## Chat manual con el agente (make chat MSG="..." CFG=C2)
 test:  ## Ejecuta la batería de tests (sin modelo, backend heurístico)
 	TFM_GUARD_BACKEND=heuristic $(PY) -m pytest -q
 
-lint:  ## ruff
+lint:  ## ruff y validación de las reglas Sigma de deteccion/
 	uv run ruff check src tests scripts
+	uv run sigma check deteccion
 
 model-digest:  ## Muestra el digest del modelo instalado para fijarlo en config/lab.yaml
 	@ollama show $${TFM_MODEL:-qwen3:8b} --modelfile 2>/dev/null | grep -i "^FROM" || \

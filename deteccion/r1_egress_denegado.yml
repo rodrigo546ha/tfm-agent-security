@@ -1,0 +1,20 @@
+title: Agente desviado - llamada de salida denegada por la allowlist
+id: 61cce430-8f66-4ba7-b0c6-0360fee603cd
+status: experimental
+description: |
+  El agente intenta enviar datos (http_fetch o enviar_email) a un destino fuera de la allowlist y el motor de
+  políticas lo deniega. Indica que algo ha desviado al agente de la tarea del usuario, aunque el dato no salga.
+author: Rodrigo
+date: 2026-11-02
+logsource:
+  product: tfm_lab
+  service: agent_telemetry
+detection:
+  selection:
+    event: tool_call
+    allowed: false
+    control: egress_allowlist
+  condition: selection
+falsepositives:
+  - Un usuario legítimo que pide enviar algo a un destino externo no autorizado
+level: high

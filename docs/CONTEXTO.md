@@ -107,7 +107,7 @@ riesgo del Anexo III aplazado a dic 2027 por el Reglamento (UE) 2026/1744).
 
 ## 5. Estado actual (2026-11-02)
 
-- Repo en GitHub (`rodrigo546ha/tfm-agent-security`), 43 tests en verde, CI activo.
+- Repo en GitHub (`rodrigo546ha/tfm-agent-security`), 44 tests en verde, CI activo (ruff, `sigma check` y tests).
 - Ollama y `qwen3:8b` instalados; guardrail descargado. `model.digest` fijado en `config/lab.yaml`; `num_ctx` 8192
   llega a Ollama (comprobado con `ollama ps`); `num_predict: 1024` corta bucles de generación (columna `truncated`).
 - Tareas benignas con oráculo: `benign_ok` + `benign_reason` en `runs.jsonl`; `make report` saca la tabla de
@@ -162,7 +162,13 @@ riesgo del Anexo III aplazado a dic 2027 por el Reglamento (UE) 2026/1744).
   de ~15 caras (pág. 3-17 del PDF) frente al máximo de 20. PDF: 23 páginas.
 - **Anexos B y C generados** (2 nov) por `make report` con `eval/anexos.py`: `tablas/anexo_corpus.tex` (semillas
   de S1-S4 y plantilla de cada mutador, desde `scenarios.py` y `mutators.py`) y `tablas/anexo_evidencias.tex`
-  (eventos de telemetría de la última campaña para C0 y C2 de `S4-s0-none` y para `C2:S2-CT-016-s1-none`). Holgura acumulada frente al presupuesto: ~3 caras. `make report` genera además `tablas/c0_desglose.tex` (C0 por mutador y por semilla); el texto del
+  (eventos de telemetría de la última campaña para C0 y C2 de `S4-s0-none` y para `C2:S2-CT-016-s1-none`).
+- **Reglas de detección Sigma** (2 nov): `deteccion/` con R1 (egress denegado por la allowlist), R2 (bloqueo del
+  guardrail) y R3 (hallazgo del DLP), validadas con `sigma check` (sigma-cli 4.0.0, pySigma 2.0.2, extra dev).
+  `eval/deteccion.py` interpreta el subconjunto de Sigma que usan y `make report` saca `tablas/deteccion.tex`.
+  R2 no se mide (necesita correlación por usuario). Resultado: alertas solo en C2 (R1 14, R3 4, 18 ataques), los 2
+  éxitos residuales con alerta y 0 falsas alarmas en las benignas; cuadra con la columna `controls`. En C0/C1 no
+  pueden dispararse porque se basan en decisiones de los controles (dicho en el anexo C). Holgura acumulada frente al presupuesto: ~3 caras. `make report` genera además `tablas/c0_desglose.tex` (C0 por mutador y por semilla); el texto del
   capítulo 6 es cualitativo y remite a las tablas. Hallazgo para el 8 y el 10: en S4 con la semilla 1 el modelo
   manda el correo al externo "con la credencial adjunta" sin incluirla (éxito por egress, sin fuga). Fuentes nuevas comprobadas en Crossref/Open Library/RFC Editor:
   PASTA (UcedaVélez y Morana 2015), STRIDE (Shostack 2014), Wilson 1927, Brown-Cai-DasGupta 2001, RFC 2606.
@@ -207,7 +213,7 @@ por la GPU, 9 herramientas, controles finales y estado de las reglas de detecci�
    debe listar semillas y mutadores (el capítulo 6 remite a él).
 4. Revisar los capítulos 8 y 10 (redactados el 2 nov).
    Al redactar el 2, la frase sobre promptfoo como segunda fuente ya está respaldada (capítulo 5 y anexo C).
-5. Decidir si las reglas de detección (Sigma) entran en el anexo o se quitan del índice de anexos.
+5. Reglas Sigma: hechas (anexo C). Pendiente solo la correlación por usuario de R2 (trabajo futuro).
 6. Memoria: las diferencias con la propuesta ya están explicadas (capítulo 5: Docker, herramientas, telemetría;
    capítulo 7: controles). El 9 debe tratar la telemetría como base de detección (el 7 remite a él).
 7. Recopilar fuentes del estado del arte en `referencias.bib` a medida que se redacta el capítulo 2.
