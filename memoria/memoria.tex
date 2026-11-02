@@ -116,19 +116,86 @@ modelado de amenazas, red teaming.
 \label{sec:sota}
 % ~2,5 caras. Amenazas a agentes LLM; taxonomías MITRE ATLAS y OWASP Agentic Top 10 2026 (ASI01-ASI10);
 % guías ENISA/NIST; incidentes documentados (p. ej. tool poisoning, MCPTox). Herramientas de red teaming:
-% garak, PyRIT, promptfoo (comparativa). "Más grande no es más seguro": guardrails pequeños competitivos.
+% garak, PyRIT, promptfoo (comparativa).
+% Fuentes comprobadas el 2 nov 2026 en arXiv, NVD, EUR-Lex, ENISA, CSA, Invariant Labs y Hugging Face.
+Un modelo de lenguaje que solo conversa puede decir algo indebido; un agente con herramientas puede además
+hacerlo. Este capítulo resume cómo se ataca a esos agentes, cómo se clasifican las amenazas, qué defensas se
+han propuesto y con qué herramientas se evalúan, para situar la aportación del trabajo.
+
+\subsection{Ataques a agentes con herramientas}
+\textbf{Inyección directa.} Perez y Ribeiro~\cite{perez2022} mostraron que entradas sencillas escritas a mano
+bastan para desviar a un modelo en producción, y distinguieron dos objetivos: el secuestro del objetivo
+(\emph{goal hijacking}) y la filtración del prompt (\emph{prompt leaking}). Son los dos objetivos de S1.
+
+\textbf{Inyección indirecta.} Greshake et al.~\cite{greshake2023} describieron cómo un atacante sin acceso al
+sistema puede controlarlo inyectando instrucciones en datos que la aplicación probablemente recuperará, y
+demostraron el ataque contra sistemas reales. Es el vector de S2. El perfil de IA generativa del
+NIST~\cite{nist_ai_600_1} recoge ya ambas variantes como riesgo de seguridad de la información.
+
+\textbf{Medidas sobre agentes.} Dos bancos de pruebas trasladan la inyección indirecta a agentes que usan
+herramientas. InjecAgent~\cite{zhan2024} evalúa 30 agentes con 1054 casos y encuentra, por ejemplo, que GPT-4
+con el esquema ReAct cae en el 24\,\% de ellos. AgentDojo~\cite{debenedetti2024} ofrece un entorno con 97 tareas
+realistas y 629 casos de seguridad, y observa que los modelos fallan muchas tareas incluso sin ataque; por eso
+este trabajo mide también si el agente completa las tareas legítimas, y no solo si resiste los ataques.
+
+\textbf{Envenenamiento de herramientas.} Invariant Labs~\cite{invariant2025} describió en abril de 2025 el
+ataque en el que se esconden instrucciones en la descripción de una herramienta MCP, invisibles para el usuario
+pero no para el modelo. MCPTox~\cite{wang2025mcptox} lo midió sobre 45 servidores MCP reales y 20 agentes: el
+ASR medio fue del 36,5\,\% y llegó al 72,8\,\% en o1-mini, con la observación de que los modelos más capaces
+suelen ser más vulnerables, porque el ataque explota su mejor seguimiento de instrucciones. La
+\atlas{CSA}~\cite{csa_tool_poisoning_2026} recoge estos resultados en su análisis de la superficie de ataque de
+MCP. Es el vector de S3.
+
+\textbf{Incidentes.} El riesgo no es solo académico. En junio de 2025 se publicó CVE-2025-32711, una inyección
+de comandos en Microsoft 365 Copilot que permitía a un atacante no autorizado revelar información por la
+red~\cite{nvd_cve_2025_32711}; Microsoft la calificó como crítica. Es el patrón de S2 y S4 en un producto
+comercial: contenido controlado por el atacante que llega al asistente y provoca una fuga de datos.
+
 \subsection{Taxonomías de amenazas}
-El marco \atlas{MITRE ATLAS}~\cite{mitre_atlas} cataloga tácticas y técnicas adversarias contra sistemas de
-IA; el \emph{OWASP Top 10 for Agentic Applications 2026}~\cite{owasp_asi_2026} las traslada al plano de los
-agentes (ASI01--ASI10). Las guías de \atlas{ENISA}~\cite{enisa_ai} aportan el encuadre regulatorio europeo, y
-la \atlas{CSA}~\cite{csa_tool_poisoning_2026} documenta el envenenamiento de herramientas en el protocolo MCP.
-\subsection{Herramientas de evaluación de seguridad de LLM}
-Se comparan \texttt{garak}~\cite{garak} (escáner de vulnerabilidades) y
-\texttt{promptfoo}~\cite{promptfoo} (evaluación y red teaming), que en este trabajo actúa como segunda fuente
-de medida independiente del harness propio.
-\subsection{Guardrails y controles conocidos}
-Como guardrail de entrada se emplea \emph{Llama Prompt Guard 2}~\cite{prompt_guard2}, un clasificador ligero
-que se ejecuta en CPU.
+\atlas{MITRE ATLAS}~\cite{mitre_atlas} cataloga tácticas y técnicas adversarias contra sistemas de IA, y el \emph{OWASP Top 10 for Agentic Applications 2026}~\cite{owasp_asi_2026} ordena los
+riesgos propios de los agentes en diez categorías, ASI01 a ASI10. Este trabajo usa ATLAS para nombrar la técnica
+de cada escenario y OWASP para la categoría de riesgo del agente. En el plano europeo, el marco multicapa de
+\atlas{ENISA}~\cite{enisa_ai} propone buenas prácticas en tres capas: fundamentos de ciberseguridad,
+ciberseguridad específica de la IA y ciberseguridad sectorial. Los marcos de gobierno, NIST AI RMF, ISO/IEC
+42001 y el Reglamento Europeo de IA, se tratan en la sección~\ref{sec:gobierno}.
+
+\subsection{Defensas}
+Las defensas publicadas se pueden ordenar según dónde actúan.
+
+\textbf{Detectores de inyección.} Clasificadores como \emph{Llama Prompt Guard 2}~\cite{prompt_guard2} marcan un
+texto como malicioso si intenta explícitamente anular las instrucciones previas. Son baratos, pero su propia
+documentación advierte que se centran en patrones de ataque conocidos y que un adversario puede diseñar ataques
+para eludirlos.
+
+\textbf{Técnicas de prompt.} \emph{Spotlighting}~\cite{hines2024} marca el contenido externo para que el modelo
+distinga las fuentes, y reduce el ASR de más del 50\,\% a menos del 2\,\% en modelos GPT. Sigue dependiendo de
+que el modelo respete la marca.
+
+\textbf{Diseño del sistema.} Una línea más reciente renuncia a que el modelo distinga instrucciones de datos y
+limita lo que puede hacer. CaMeL~\cite{debenedetti2025camel} crea una capa protectora alrededor del modelo que lo
+protege aunque el modelo sea vulnerable, y resuelve el 77\,\% de las tareas de AgentDojo con seguridad
+demostrable, frente al 84\,\% sin defensa. Beurer-Kellner et al.~\cite{beurerkellner2025} proponen patrones de
+diseño con resistencia demostrable a la inyección y analizan su coste en utilidad. La arquitectura de este
+trabajo pertenece a esta familia: sus controles principales son deterministas y no dependen de que el modelo
+reconozca el ataque.
+
+\subsection{Herramientas de evaluación}
+\texttt{garak}~\cite{derczynski2024} sondea un modelo o un sistema de diálogo de forma estructurada para descubrir
+vulnerabilidades; \texttt{PyRIT}~\cite{lopezmunoz2024} es un marco abierto para el red teaming de sistemas de
+IA generativa, independiente del modelo y de la plataforma; y \texttt{promptfoo}~\cite{promptfoo} combina
+evaluación y red teaming. En este trabajo el criterio de éxito depende de lo que
+el agente \emph{hace} (herramientas ejecutadas, tráfico hacia el sumidero de salida), que solo observa el propio
+laboratorio. Por eso las campañas usan un harness propio con detección determinista por canarios, y
+\texttt{promptfoo} actúa como segunda fuente de medida de S1 con sus propias aserciones sobre la respuesta del
+agente (sección~\ref{sec:lab}). \texttt{garak} queda como extensión para generar nuevas variantes, y
+\texttt{PyRIT} se descartó por encaje: está orientado a descubrir daños y \emph{jailbreaks} nuevos, mientras
+que aquí las entradas se fijan de antemano para comparar configuraciones.
+
+\textbf{Aportación respecto al estado del arte.} Los bancos de pruebas citados miden la vulnerabilidad de los
+modelos, y los trabajos de diseño proponen defensas. Este trabajo une ambas cosas en un laboratorio local y de
+coste cero: parte de un modelo de amenazas mapeado a ATLAS y OWASP, mide la aportación de cada control de una
+arquitectura de referencia frente a una línea base, y atribuye cada bloqueo a su control, junto con el coste en
+tareas legítimas y en latencia.
 
 \section{Metodología}
 \label{sec:metodo}
