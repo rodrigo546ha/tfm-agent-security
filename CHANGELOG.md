@@ -5,10 +5,10 @@ Sirve como bitácora de reproducibilidad y como control de las 45-60 h compromet
 
 Las horas desde el 31 oct son estimaciones a partir de la actividad registrada en la sesión de Claude Code
 (intervalos sin más de 20 min de inactividad); las campañas desatendidas no cuentan. Las de septiembre se
-estiman a partir de las horas de los commits. Acumulado estimado: ~7 h.
+estiman a partir de las horas de los commits. Acumulado estimado: ~8 h.
 
 ## [No publicado]
-### 2026-11-02 — Capítulos 8 y 10, atribución por control, promptfoo [~2h]
+### 2026-11-02 — Capítulos 8, 9 y 10, atribución por control, promptfoo [~3h]
 - `runs.jsonl` registra en `controls` qué controles intervienen en cada ejecución; `make report` genera
   `tablas/atribucion.tex` y `tablas/latencia.tex`. 41 tests.
 - Campaña completa repetida dos veces: mismo ASR, benignas y errores fila a fila. La primera tuvo la latencia de C0
@@ -20,6 +20,9 @@ estiman a partir de las horas de los commits. Acumulado estimado: ~7 h.
 - promptfoo ejecutado como segunda fuente de S1 (`make promptfoo`): pruebas generadas desde los escenarios,
   servidor con el mismo agente que la campaña, versión fijada y sin telemetría. Coincide con el detector en las 60
   ejecuciones; tabla de concordancia en `make report` y anexo C. 42 tests.
+- Capítulo 9 redactado con fuentes leídas en origen (EUR-Lex, PDF de NIST, ficha de ISO): mapeo a NIST AI RMF y
+  al Reglamento de IA, calendario tras el Ómnibus digital sobre IA (Reglamento (UE) 2026/1744), gobierno del
+  cambio y telemetría como base de detección. Cinco entradas nuevas en `referencias.bib`.
 
 ### 2026-11-01 — Campaña completa, corpus de S2 y capítulo 4 [~1h]
 - Campaña completa (363 filas, 52 min). C2 para los 25 éxitos de C0, sin falsos bloqueos. Detectado que los 20

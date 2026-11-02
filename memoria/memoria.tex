@@ -664,6 +664,61 @@ configuración se multiplicó, por lo que la campaña se repitió con el equipo 
 \label{sec:gobierno}
 % ~1 cara. Traducción de controles a políticas de gobierno; alineación con el marco regulatorio de IA
 % aplicable (transparencia; sistemas de alto riesgo). Logging estructurado como base de detección.
+% Fuentes comprobadas el 2 nov 2026: texto del Reglamento y del Ómnibus en EUR-Lex, PDF de NIST AI 100-1 y
+% 600-1, ficha de ISO/IEC 42001 (el texto de la norma es de pago: no se citan cláusulas ni controles del anexo A).
+Los controles de los capítulos anteriores son técnicos; para que una organización los mantenga hace falta
+situarlos en un marco de gobierno. Se usan tres referencias complementarias: el \atlas{AI RMF} del
+NIST~\cite{nist_ai_rmf}, voluntario y organizado en cuatro funciones (\emph{Govern}, \emph{Map}, \emph{Measure} y
+\emph{Manage}), con su perfil para IA generativa~\cite{nist_ai_600_1}; la norma ISO/IEC~42001~\cite{iso42001},
+que especifica los requisitos de un sistema de gestión de la IA que se establece, implanta, mantiene y mejora de
+forma continua; y el Reglamento Europeo de IA~\cite{reglamento_ia}, la única de las tres de cumplimiento
+obligatorio. La tabla~\ref{tab:gobierno} relaciona cada elemento del trabajo con las tres.
+
+\begin{table}[h]\centering\footnotesize
+\caption{Elementos del trabajo frente al AI RMF del NIST y al Reglamento Europeo de IA.}\label{tab:gobierno}
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{3.6cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X}
+\toprule
+Elemento del trabajo & NIST AI RMF & Reglamento de IA \\
+\midrule
+Modelo de amenazas T1--T7 & \emph{Map}: contexto y riesgos del sistema & Art.~9: gestión de riesgos conocidos y
+previsibles \\
+Campañas C0/C1/C2 y ASR & \emph{Measure} 2.7: seguridad evaluada y documentada; MS-2.7-007: red teaming contra
+inyección de prompts & Art.~15.5: resistencia a terceros que intenten alterar el uso o los resultados \\
+Controles K1--K10 & \emph{Manage}: tratamiento de los riesgos medidos & Art.~15.5: medidas para prevenir,
+detectar y combatir ataques \\
+Pinning de herramientas (K3) & \emph{Govern} 6.1: riesgos de terceros & --- \\
+Confirmación humana (K8) & --- & Art.~14.4: poder no usar el sistema o descartar sus resultados \\
+Telemetría por ejecución & \emph{Manage} 4.1 y 4.3: seguimiento tras el despliegue e incidentes & Art.~12:
+registro automático de eventos; art.~26.6: conservarlos al menos seis meses \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Qué obliga y desde cuándo.} A un agente que conversa con empleados le alcanza ya la obligación de
+transparencia del artículo~50.1, aplicable desde el 2 de agosto de 2026: el proveedor debe diseñarlo para que
+quien interactúa con él sepa que lo hace con un sistema de IA, salvo que resulte evidente. El agente del laboratorio, que ayuda a un analista con datos de clientes y
+contratos, no es por sí mismo de alto riesgo; lo sería si se usara en alguno de los ámbitos del anexo~III, como
+la evaluación de solvencia o la selección de personal. En ese caso se le aplicarían los requisitos de gestión de
+riesgos, registro, supervisión humana y ciberseguridad de los artículos 9, 12, 14 y 15, que el Ómnibus digital
+sobre IA~\cite{omnibus_ia} ha aplazado al 2 de diciembre de 2027 (y al 2 de agosto de 2028 para la IA integrada en
+productos del anexo~I). El artículo~15.5 no nombra la inyección de prompts, pero exige resistir los intentos de
+terceros de alterar el uso o los resultados del sistema aprovechando sus vulnerabilidades, que es lo que hacen
+S1--S4. La arquitectura de referencia sirve, por tanto, como diseño anticipado para ese supuesto.
+
+\textbf{Gobierno del cambio.} La eficacia medida vale para un modelo, unas herramientas y una política concretos.
+El laboratorio fija los tres (modelo por \emph{digest}, herramientas por hash y política versionada), de modo que
+cualquier cambio es detectable. La política de gobierno propuesta, coherente con el ciclo de mejora continua de
+ISO/IEC~42001, es repetir la campaña antes de aceptar un cambio de modelo, de herramienta o de política, y no
+desplegarlo si el ASR de C2 aumenta o si baja la proporción de tareas legítimas completadas.
+
+\textbf{Telemetría como base de detección.} Cada ejecución registra la entrada, la decisión del guardrail con su
+puntuación, cada llamada a herramienta con la decisión del motor de políticas y el control que la tomó, y los
+hallazgos del DLP en la respuesta. Sobre esos eventos se pueden escribir reglas de detección: una llamada de
+salida denegada por la allowlist indica un agente desviado; varios bloqueos del guardrail seguidos para el mismo
+usuario, un sondeo; y un hallazgo del DLP de salida, un intento de fuga contenido. Los dos éxitos residuales de C2
+dejan precisamente el primero de esos rastros, de modo que una regla así los convertiría en incidentes
+detectados. La telemetría cubre además los artículos 12 y 26.6 del Reglamento y la función \emph{Manage} del
+AI RMF.
 
 \section{Conclusiones, limitaciones y trabajo futuro}
 \label{sec:conclusiones}

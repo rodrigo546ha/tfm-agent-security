@@ -101,7 +101,7 @@ Reglas: los números de resultados solo salen de `make report`; toda afirmación
 en `referencias.bib` (URL + fecha de consulta). Fuentes ya identificadas: OWASP Top 10 for Agentic Applications
 2026, MITRE ATLAS 2026.10 (AML.T0051, T0053, T0086, T0098, T0099, T0110), CSA sobre tool poisoning en MCP (MCPTox, ASR 36,5 %), Llama Prompt
 Guard 2, comparativas garak/PyRIT/promptfoo, Reglamento Europeo de IA (transparencia desde 2 ago 2026; alto
-riesgo del Anexo III aplazado a dic 2027).
+riesgo del Anexo III aplazado a dic 2027 por el Reglamento (UE) 2026/1744).
 
 ---
 
@@ -152,7 +152,9 @@ riesgo del Anexo III aplazado a dic 2027).
   los controles K1-K10 (tabla), defensa en profundidad frente a T1-T7 y diferencias con los "cinco controles";
   **capítulo 8 redactado** (2 nov, ~1,8 caras de 2) con las tablas de atribución,
   benignas y latencia (`tablas/latencia.tex`); **capítulo 10 redactado** (2 nov, ~0,7 caras de 0,5: respuesta a
-  la pregunta, limitaciones y trabajo futuro, sin cifras). Quedan el 1, 2 y 9. PDF: 17 páginas. Holgura acumulada frente al presupuesto: ~3 caras. `make report` genera además `tablas/c0_desglose.tex` (C0 por mutador y por semilla); el texto del
+  la pregunta, limitaciones y trabajo futuro, sin cifras). **Capítulo 9 redactado** (2 nov, ~1,1 caras de 1): tabla de elementos del trabajo frente
+  a NIST AI RMF y Reglamento de IA, calendario de obligaciones, gobierno del cambio y telemetría como base de
+  detección. Quedan el 1 y el 2. PDF: 18 páginas. Holgura acumulada frente al presupuesto: ~3 caras. `make report` genera además `tablas/c0_desglose.tex` (C0 por mutador y por semilla); el texto del
   capítulo 6 es cualitativo y remite a las tablas. Hallazgo para el 8 y el 10: en S4 con la semilla 1 el modelo
   manda el correo al externo "con la credencial adjunta" sin incluirla (éxito por egress, sin fuga). Fuentes nuevas comprobadas en Crossref/Open Library/RFC Editor:
   PASTA (UcedaVélez y Morana 2015), STRIDE (Shostack 2014), Wilson 1927, Brown-Cai-DasGupta 2001, RFC 2606.
@@ -181,8 +183,14 @@ por la GPU, 9 herramientas, controles finales y estado de las reglas de detecci�
    S3 (25 %, documentado como resultado), falso bloqueo de C1 0 %, única fila con error `S4-s1-base64` (aceptada).
 2. El DFD (figura 1) a ancho completo tiene etiquetas pequeñas: valorar redibujarlo más compacto.
 3. Revisar los capítulos 3 a 7 (en el 4, las prioridades P/I a priori son juicio del autor: confirmarlas).
-   Siguiente capítulo propuesto: 9 (gobierno: NIST AI RMF, ISO/IEC 42001, Reglamento de IA, telemetría como base
-   de detección) o el 2 (estado del arte); ambos necesitan fuentes nuevas comprobadas. Después el 1. El anexo B
+   Siguiente capítulo propuesto: 2 (estado del arte; necesita fuentes nuevas comprobadas) y después el 1.
+   Fuentes del 9 comprobadas el 2 nov en origen: Reglamento (UE) 2024/1689 (DO L 12.7.2024; arts. 9, 12, 14.4,
+   15.5, 26.6, 50.1, 113 y anexo III leídos en EUR-Lex) y Ómnibus digital sobre IA, Reglamento (UE) 2026/1744
+   (DO L 24.7.2026, en vigor el 27.7.2026): alto riesgo del anexo III al 2 dic 2027, anexo I al 2 ago 2028,
+   art. 50.2 con transición hasta el 2 dic 2026 para sistemas ya en el mercado. NIST AI 100-1 (ene 2023) y
+   AI 600-1 (jul 2024, MS-2.7-007 red teaming contra prompt injection). ISO/IEC 42001:2023 solo por su ficha (la
+   norma es de pago): no citar cláusulas ni controles del anexo A. EUR-Lex no responde a WebFetch (202 vacío):
+   leerlo con el navegador integrado. El anexo B
    debe listar semillas y mutadores (el capítulo 6 remite a él).
 4. Revisar los capítulos 8 y 10 (redactados el 2 nov).
    Al redactar el 2, la frase sobre promptfoo como segunda fuente ya está respaldada (capítulo 5 y anexo C).
