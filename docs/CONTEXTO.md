@@ -146,7 +146,8 @@ riesgo del Anexo III aplazado a dic 2027).
   DFD y la matriz, el 5 ~1,5 (2) con las diferencias respecto a la propuesta, el 6 ~1,8 (3) y el 7 ~1,6 (3), con
   los controles K1-K10 (tabla), defensa en profundidad frente a T1-T7 y diferencias con los "cinco controles";
   **capítulo 8 redactado** (2 nov, ~1,8 caras de 2) con las tablas de atribución,
-  benignas y latencia (`tablas/latencia.tex`); quedan el 1, 2, 9 y 10. PDF: 16 páginas. Holgura acumulada frente al presupuesto: ~3 caras. `make report` genera además `tablas/c0_desglose.tex` (C0 por mutador y por semilla); el texto del
+  benignas y latencia (`tablas/latencia.tex`); **capítulo 10 redactado** (2 nov, ~0,7 caras de 0,5: respuesta a
+  la pregunta, limitaciones y trabajo futuro, sin cifras). Quedan el 1, 2 y 9. PDF: 17 páginas. Holgura acumulada frente al presupuesto: ~3 caras. `make report` genera además `tablas/c0_desglose.tex` (C0 por mutador y por semilla); el texto del
   capítulo 6 es cualitativo y remite a las tablas. Hallazgo para el 8 y el 10: en S4 con la semilla 1 el modelo
   manda el correo al externo "con la credencial adjunta" sin incluirla (éxito por egress, sin fuga). Fuentes nuevas comprobadas en Crossref/Open Library/RFC Editor:
   PASTA (UcedaVélez y Morana 2015), STRIDE (Shostack 2014), Wilson 1927, Brown-Cai-DasGupta 2001, RFC 2606.
@@ -175,10 +176,13 @@ por la GPU, 9 herramientas, controles finales y estado de las reglas de detecci�
    S3 (25 %, documentado como resultado), falso bloqueo de C1 0 %, única fila con error `S4-s1-base64` (aceptada).
 2. El DFD (figura 1) a ancho completo tiene etiquetas pequeñas: valorar redibujarlo más compacto.
 3. Revisar los capítulos 3 a 7 (en el 4, las prioridades P/I a priori son juicio del autor: confirmarlas).
-   Siguiente capítulo propuesto: 10 (conclusiones y limitaciones: benignas poco variadas, oráculo que comprueba
-   un dato clave, base64 que el modelo no decodifica, n pequeño, latencia orientativa, un solo modelo) o el 2
-   (estado del arte, que necesita fuentes). El anexo B debe listar semillas y mutadores (el capítulo 6 remite a él).
-4. Revisar el capítulo 8 (redactado el 2 nov).
+   Siguiente capítulo propuesto: 9 (gobierno: NIST AI RMF, ISO/IEC 42001, Reglamento de IA, telemetría como base
+   de detección) o el 2 (estado del arte); ambos necesitan fuentes nuevas comprobadas. Después el 1. El anexo B
+   debe listar semillas y mutadores (el capítulo 6 remite a él).
+4. Revisar los capítulos 8 y 10 (redactados el 2 nov).
+   **Decidir sobre promptfoo:** el capítulo 2 dice que "actúa como segunda fuente de medida" de S1, pero nunca se ha
+   ejecutado (`promptfoo/` solo tiene la configuración). O se ejecuta (local, `npx`, sin claves) y se informa, o se
+   quita la frase y pasa a trabajo futuro. El capítulo 10 no lo menciona.
 5. Decidir si las reglas de detección (Sigma) entran en el anexo o se quitan del índice de anexos.
 6. Memoria: las diferencias con la propuesta ya están explicadas (capítulo 5: Docker, herramientas, telemetría;
    capítulo 7: controles). El 9 debe tratar la telemetría como base de detección (el 7 remite a él).

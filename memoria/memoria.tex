@@ -665,6 +665,35 @@ configuración se multiplicó, por lo que la campaña se repitió con el equipo 
 \label{sec:conclusiones}
 % ~0,5 cara. Respuesta a la pregunta de investigación; limitaciones (modelos ~8B, corpus sintético);
 % líneas futuras (quinto escenario MCP, más modelos, reglas Sigma sobre la telemetría).
+% Sin cifras: remite a las tablas generadas de los capítulos 6 y 8.
+\textbf{Respuesta a la pregunta de investigación.} Un clasificador de inyecciones por sí solo reduce poco el
+riesgo: actúa cuando la carga tiene forma de inyección, pero no ve las peticiones que parecen una operación
+normal, como enviar una credencial a un proveedor, ni las cargas codificadas. La arquitectura completa casi
+elimina los ataques medidos sin bloquear ninguna tarea legítima y con una latencia del mismo orden. La mayor
+parte de esa reducción procede de controles deterministas (mínimo privilegio, allowlist de salida, pinning de
+herramientas y DLP), que no necesitan reconocer la forma del ataque. Los dos éxitos residuales ilustran la
+defensa en profundidad: el agente queda desviado, pero el broker y la allowlist impiden que salga el secreto. La
+conclusión práctica es que la seguridad de un agente con herramientas debe apoyarse en limitar lo que puede
+hacer más que en detectar lo que se le dice. Con ello se cubren los objetivos O1 a O3: un modelo de amenazas
+priorizado y mapeado a ATLAS y OWASP (sección~\ref{sec:threat}), una arquitectura de diez controles
+(sección~\ref{sec:arquitectura}) y su validación frente a una línea base (sección~\ref{sec:validacion}).
+
+\textbf{Limitaciones.} Se ha evaluado un único modelo de 8B que, además, no decodifica base64; contra un modelo
+más capaz esas variantes podrían prosperar y, como el guardrail no las detecta, solo las pararían los controles
+de arquitectura. Con 14 a 20 variantes por escenario los intervalos son anchos, y por escenario la diferencia
+entre C0 y C2 solo es clara en S1 y S4. Los ataques son estáticos y los ha escrito el mismo autor que los
+controles: aunque estos no se ajustaron tras ver los resultados, no se ha medido un atacante adaptativo que
+conozca la arquitectura. La confirmación humana la da un aprobador automático, de modo que no se mide la fatiga
+de aprobación de una persona. Las tareas legítimas tienen poca variedad y el oráculo comprueba un dato clave, no
+la calidad del resumen. La latencia es orientativa porque depende de la carga del equipo. Por último, las
+herramientas y la salida a red son simuladas, cada tarea es una sola petición y el agente no tiene memoria
+persistente.
+
+\textbf{Trabajo futuro.} Repetir las campañas con otros modelos abiertos, incluidos modelos mayores que sí
+decodifiquen las cargas ofuscadas; incorporar atacantes adaptativos y generadores externos de variantes como
+\texttt{garak}~\cite{garak}; añadir un quinto escenario con un servidor MCP real y otro con memoria persistente y
+conversaciones de varios turnos (ASI06); escribir reglas de detección sobre la telemetría estructurada que ya
+registra el laboratorio; y estudiar la confirmación humana con usuarios reales.
 
 % --- Bibliografía (media cara) -----------------------------------------------------------------------
 \bibliographystyle{unsrt}   % numerada por orden de aparición (estilo tipo IEEE)
