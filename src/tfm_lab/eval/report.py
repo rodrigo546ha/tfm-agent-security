@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from tfm_lab.eval.anexos import corpus_latex, evidence_latex
 from tfm_lab.eval.promptfoo import load_results as load_promptfoo
 from tfm_lab.settings import load_settings
 
@@ -293,6 +294,12 @@ def main() -> None:
             print("AVISO: veredictos distintos en " + ", ".join(agr.attrs["discrepancias"]))
         agreement_latex(agr, s.root / "memoria" / "tablas" / "promptfoo.tex")
         extra += " · memoria/tablas/promptfoo.tex"
+    tablas = s.root / "memoria" / "tablas"
+    corpus_latex(tablas / "anexo_corpus.tex", s.path("web"))
+    extra += " · memoria/tablas/anexo_corpus.tex"
+    if (results / "telemetry.jsonl").exists() and evidence_latex(results / "telemetry.jsonl",
+                                                                 tablas / "anexo_evidencias.tex"):
+        extra += " · memoria/tablas/anexo_evidencias.tex"
     extra += " · memoria/tablas/benignas.tex" if not util.empty else ""
     print(f"\n-> {results / 'asr.csv'} · {results / 'asr.png'} · memoria/tablas/asr.tex{extra}")
 

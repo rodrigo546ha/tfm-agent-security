@@ -109,3 +109,25 @@ def test_promptfoo_pruebas_y_concordancia(lab, tmp_path):
     assert agr.attrs["discrepancias"] == ["C0 S1-s1-none"]
     report.agreement_latex(agr, tmp_path / "pf.tex")
     assert "C0 & 2 & 2 & 1 & 1" in (tmp_path / "pf.tex").read_text()
+
+
+def test_anexos_generados_desde_codigo_y_telemetria(tmp_path):
+    import json
+
+    from tfm_lab.eval import anexos
+    anexos.corpus_latex(tmp_path / "corpus.tex")
+    corpus = (tmp_path / "corpus.tex").read_text()
+    assert "S1-s3" in corpus and "S2-s4" in corpus and "S4-s2" in corpus
+    assert r"\emph{carga codificada en base64}" in corpus and "—" not in corpus  # raya Unicode escapada
+    tel = tmp_path / "telemetry.jsonl"
+    ev = [{"run_id": "C2:X", "event": "user_input", "text": "antigua"},
+          {"run_id": "C2:X", "event": "user_input", "text": "nueva 100%"},
+          {"run_id": "C2:X", "event": "tool_call", "tool": "http_fetch", "args": {"url": "http://a_b"},
+           "allowed": False, "control": "egress_allowlist"},
+          {"run_id": "C2:X", "event": "guard_input", "blocked": False, "score": 0.0004}]
+    tel.write_text("\n".join(json.dumps(e) for e in ev))
+    assert [e["text"] for e in anexos.last_run_events(tel, "C2:X")[:1]] == ["nueva 100%"]  # solo la última
+    assert anexos.evidence_latex(tel, tmp_path / "ev.tex", ["C2:X", "C0:no-existe"]) == 1
+    out = (tmp_path / "ev.tex").read_text()
+    assert r"nueva 100\%" in out and "antigua" not in out and "0{,}0004" in out
+    assert r"egress\_\allowbreak{}allowlist" in out  # punto de corte tras _ para que no se salga del margen

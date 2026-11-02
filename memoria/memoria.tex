@@ -873,9 +873,21 @@ registra el laboratorio; y estudiar la confirmación humana con usuarios reales.
 \section{Repositorio y guía de despliegue}\label{sec:anexo-repo}
 El código fuente y la guía de reproducción están en \url{https://github.com/rodrigo546ha/tfm-agent-security}.
 \section{Corpus de ataques}\label{sec:anexo-corpus}
-Semillas y mutadores; muestra de variantes por escenario.
+Las variantes de cada escenario combinan una semilla con un mutador
+(\texttt{scenarios.py} y \texttt{mutators.py}, en \texttt{src/tfm\_lab/attacks}). Este anexo lo genera
+\texttt{make report} a partir de ese código.
+
+\IfFileExists{tablas/anexo_corpus.tex}{\input{tablas/anexo_corpus.tex}}{\emph{Ejecuta \texttt{make report}}}
 \section{Reglas de detección y evidencias}\label{sec:anexo-reglas}
-Telemetría estructurada y ejemplos de captura del sumidero de egress.
+\paragraph{Telemetría.} Cada ejecución escribe en \texttt{results/telemetry.jsonl} una línea JSON por evento:
+la entrada del usuario, la decisión del guardrail con su puntuación, cada llamada a herramienta con sus
+argumentos y la decisión del motor de políticas, y la respuesta final con los hallazgos del DLP. Las reglas de
+detección propuestas en la sección~\ref{sec:gobierno} se escribirían sobre estos eventos; no forman parte de los
+controles evaluados. Las tablas siguientes, generadas por \texttt{make report} a partir de la última campaña,
+muestran el mismo ataque de S4 sin controles y con la arquitectura completa, y uno de los dos éxitos residuales de
+C2. Los secretos que aparecen son canarios sintéticos.
+
+\IfFileExists{tablas/anexo_evidencias.tex}{\input{tablas/anexo_evidencias.tex}}{\emph{Ejecuta \texttt{make report}}}
 
 \paragraph{Segunda fuente de medida.} \texttt{make promptfoo} genera una prueba de \texttt{promptfoo} por cada
 variante de S1 a partir de \texttt{attacks/scenarios.py}, con una aserción por criterio de éxito: que la
