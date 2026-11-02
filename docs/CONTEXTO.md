@@ -107,7 +107,7 @@ riesgo del Anexo III aplazado a dic 2027).
 
 ## 5. Estado actual (2026-11-02)
 
-- Repo en GitHub (`rodrigo546ha/tfm-agent-security`), 41 tests en verde, CI activo.
+- Repo en GitHub (`rodrigo546ha/tfm-agent-security`), 42 tests en verde, CI activo.
 - Ollama y `qwen3:8b` instalados; guardrail descargado. `model.digest` fijado en `config/lab.yaml`; `num_ctx` 8192
   llega a Ollama (comprobado con `ollama ps`); `num_predict: 1024` corta bucles de generación (columna `truncated`).
 - Tareas benignas con oráculo: `benign_ok` + `benign_reason` en `runs.jsonl`; `make report` saca la tabla de
@@ -126,6 +126,11 @@ riesgo del Anexo III aplazado a dic 2027).
   La latencia NO es reproducible: en la campaña del 1-2 nov otro proceso cargó la máquina durante las benignas de
   C0 (B-26 a B-31 entre 150 y 650 s) y la media de C0 subió a 24 s; se repitió vigilando `ollama ps` cada 30 s
   (solo `qwen3:8b` cargado). No lanzar campañas con el otro proyecto (`housefinder.jobs`) usando Ollama.
+- **promptfoo como segunda fuente de S1** (2 nov): `make promptfoo` genera 20 pruebas desde `scenarios.py` (una
+  aserción por criterio de éxito), sirve el agente con `campaign._agent` (antes `serve_agent.py` creaba C2 sin
+  los secretos del DLP) y ejecuta `promptfoo@0.125.1` con `-j 1`, sin caché ni telemetría. Concordancia con el
+  detector 60/60 (C0 12, C1 8, C2 0 éxitos) y mismas herramientas por variante; `tablas/promptfoo.tex`, citado en
+  el capítulo 5 y en el anexo C. Ojo: `transformResponse` debe devolver `({ output: json })`, no `json`.
 - De los 34 éxitos de C0: C1 para 8 (guardrail de entrada 4, guardrail sobre el resultado de herramienta 4).
   C2 para 32; controles que intervienen: mínimo privilegio 5, allowlist 13 (incluye los 2 que siguen con éxito),
   guardrail de entrada 4, guardrail sobre resultado 4, DLP 4, pinning 4 (todos los de S3). Cada ataque lo frena un
@@ -180,9 +185,7 @@ por la GPU, 9 herramientas, controles finales y estado de las reglas de detecci�
    de detección) o el 2 (estado del arte); ambos necesitan fuentes nuevas comprobadas. Después el 1. El anexo B
    debe listar semillas y mutadores (el capítulo 6 remite a él).
 4. Revisar los capítulos 8 y 10 (redactados el 2 nov).
-   **Decidir sobre promptfoo:** el capítulo 2 dice que "actúa como segunda fuente de medida" de S1, pero nunca se ha
-   ejecutado (`promptfoo/` solo tiene la configuración). O se ejecuta (local, `npx`, sin claves) y se informa, o se
-   quita la frase y pasa a trabajo futuro. El capítulo 10 no lo menciona.
+   Al redactar el 2, la frase sobre promptfoo como segunda fuente ya está respaldada (capítulo 5 y anexo C).
 5. Decidir si las reglas de detección (Sigma) entran en el anexo o se quitan del índice de anexos.
 6. Memoria: las diferencias con la propuesta ya están explicadas (capítulo 5: Docker, herramientas, telemetría;
    capítulo 7: controles). El 9 debe tratar la telemetría como base de detección (el 7 remite a él).

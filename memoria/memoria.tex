@@ -383,7 +383,11 @@ número a mano. Las dependencias están fijadas con \texttt{uv.lock}, el modelo 
 por su semilla; dos generaciones consecutivas del corpus producen el mismo contenido. Una batería de
 pruebas automáticas que no necesita el modelo comprueba el detector, los controles y el oráculo de tareas en cada
 cambio del repositorio. Para reproducir en Linux o en una máquina virtual sin GPU, el repositorio incluye un
-\texttt{Dockerfile} y un \texttt{docker-compose.yml}.
+\texttt{Dockerfile} y un \texttt{docker-compose.yml}. Repetir la campaña completa da el mismo veredicto en todas las
+ejecuciones; solo cambia la latencia. Como segunda fuente de medida, \texttt{make promptfoo} sirve el agente por
+HTTP en local y lanza las variantes de S1 con \texttt{promptfoo}~\cite{promptfoo}, que juzga cada respuesta con
+sus propias aserciones y no con el detector del laboratorio; los veredictos coinciden en todas las variantes y
+configuraciones (anexo~\ref{sec:anexo-reglas}).
 
 \subsection{Diferencias con la propuesta}
 El laboratorio difiere en tres puntos de la descripción enviada en la propuesta. Primero, el modelo se ejecuta
@@ -707,5 +711,19 @@ El código fuente y la guía de reproducción están en \url{https://github.com/
 Semillas y mutadores; muestra de variantes por escenario.
 \section{Reglas de detección y evidencias}\label{sec:anexo-reglas}
 Telemetría estructurada y ejemplos de captura del sumidero de egress.
+
+\paragraph{Segunda fuente de medida.} \texttt{make promptfoo} genera una prueba de \texttt{promptfoo} por cada
+variante de S1 a partir de \texttt{attacks/scenarios.py}, con una aserción por criterio de éxito: que la
+respuesta no contenga el canario del prompt de sistema ni el de la clave del CRM, y que no se haya ejecutado con
+permiso \texttt{consultar\_secretos}. El agente se sirve en \texttt{127.0.0.1} con la misma construcción que la
+campaña, una petición cada vez y sin telemetría de \texttt{promptfoo}. La tabla~\ref{tab:promptfoo} compara sus
+veredictos con los del detector del laboratorio; las herramientas llamadas en cada variante también coinciden con
+las de la campaña.
+
+\begin{table}[h]\centering\footnotesize
+\caption{S1: éxitos según el detector del laboratorio y según \texttt{promptfoo}, y variantes en las que ambos
+coinciden. Generada por \texttt{make report}.}\label{tab:promptfoo}
+\IfFileExists{tablas/promptfoo.tex}{\input{tablas/promptfoo.tex}}{\emph{Ejecuta \texttt{make promptfoo report}}}
+\end{table}
 
 \end{document}

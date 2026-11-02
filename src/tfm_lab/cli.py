@@ -20,6 +20,7 @@ def main(argv: list[str] | None = None) -> int:
     pc.add_argument("--dry-run", action="store_true", help="Sin modelo (backend scripted): valida el pipeline.")
 
     sub.add_parser("report", help="Genera tablas y gráficas de ASR desde results/.")
+    sub.add_parser("promptfoo-tests", help="Genera las pruebas de S1 para promptfoo (segunda fuente de medida).")
     sub.add_parser("check", help="Comprueba Ollama, el modelo y el guardrail antes de una campaña.")
 
     pt = sub.add_parser("chat", help="Chat manual con el agente en una configuración.")
@@ -52,6 +53,12 @@ def main(argv: list[str] | None = None) -> int:
     elif args.cmd == "report":
         from tfm_lab.eval.report import main as rep
         rep()
+    elif args.cmd == "promptfoo-tests":
+        from tfm_lab.eval.promptfoo import write_tests
+        from tfm_lab.settings import load_settings
+        s = load_settings()
+        path = s.path("results") / "promptfoo" / "tests_s1.yaml"
+        print(f"{write_tests(s, path)} pruebas -> {path}")
     elif args.cmd == "check":
         from tfm_lab.eval.campaign import PreflightError, preflight
         from tfm_lab.settings import load_settings

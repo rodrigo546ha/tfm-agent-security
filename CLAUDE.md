@@ -12,11 +12,12 @@ laboratorio (código) y la memoria (LaTeX en `memoria/`). Idioma de código, com
 - No cambiar título ni índice de la memoria: si falta tiempo, se recorta alcance (3 escenarios / 3 controles).
 
 ## Comandos
-- `make test` — 41 tests sin modelo (backend heurístico). Ejecútalo tras cualquier cambio en `src/`.
+- `make test` — 42 tests sin modelo (backend heurístico). Ejecútalo tras cualquier cambio en `src/`.
 - `make lint` — ruff.
 - `make check` — comprueba Ollama, modelo y guardrail. Obligatorio antes de una campaña.
 - `make campaign-fast` — S1+S4 en C0/C2 + 50 benignas (~20-30 min).
 - `make reproduce` — campaña completa C0/C1/C2 × S1-S4 (~3-4 h). Lánzala con `caffeinate -i`.
+- `make promptfoo` — S1 con promptfoo 0.125.1 como segunda fuente de medida (~6 min, sin telemetría).
 - `make report` — ASR con IC Wilson, falso bloqueo, latencia → `results/asr.{csv,png}` y `memoria/tablas/asr.tex`.
 - `make memoria-figs && make memoria` — copia figuras y compila `memoria/memoria.pdf`.
 - `uv run python -m tfm_lab.cli chat --config C2 "mensaje"` — probar el agente a mano.

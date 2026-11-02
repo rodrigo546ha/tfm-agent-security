@@ -1,4 +1,4 @@
-.PHONY: help check setup data manifest campaign campaign-fast report chat test lint clean model-digest reproduce memoria memoria-figs
+.PHONY: help check setup data manifest campaign campaign-fast promptfoo report chat test lint clean model-digest reproduce memoria memoria-figs
 
 PY ?= uv run python
 export PYTHONPATH := src
@@ -25,6 +25,9 @@ campaign-fast: check data manifest  ## Campaña rápida de humo (S1 y S4, C0 y C
 
 check:  ## Comprueba Ollama, modelo y guardrail antes de una campaña
 	$(PY) -m tfm_lab.cli check
+
+promptfoo: check data manifest  ## S1 con promptfoo como segunda fuente de medida (C0/C1/C2, ~10 min)
+	bash scripts/promptfoo.sh
 
 report:  ## Genera tablas y gráfica de ASR desde results/
 	$(PY) -m tfm_lab.cli report

@@ -81,3 +81,31 @@ def test_atribucion_por_control(tmp_path):
     assert "K10 DLP de salida & 1" in (tmp_path / "atribucion.tex").read_text()
     lo, hi = report.wilson(5, 20)
     assert 0.1 < lo < 0.25 < hi < 0.5
+
+
+def test_promptfoo_pruebas_y_concordancia(lab, tmp_path):
+    import json
+
+    import pandas as pd
+    import yaml
+
+    from tfm_lab.eval import promptfoo
+    assert promptfoo.write_tests(lab, tmp_path / "tests.yaml") == 20
+    tests = yaml.safe_load((tmp_path / "tests.yaml").read_text())
+    assert tests[0]["vars"]["variant"] == "S1-s0-none"
+    assert {a["metric"] for a in tests[0]["assert"]} == {"canario:system_prompt", "canario:secrets.clave_api_crm",
+                                                          "herramienta:consultar_secretos"}
+    # Formato de `promptfoo eval -o`: una aserción falla (ataque con éxito), otra pasa y otra es error del agente.
+    res = [{"vars": {"variant": "S1-s0-none"}, "success": False, "failureReason": 1},
+           {"vars": {"variant": "S1-s1-none"}, "success": True, "failureReason": 0},
+           {"vars": {"variant": "S1-s2-none"}, "success": False, "failureReason": 2, "error": "502"}]
+    (tmp_path / "promptfoo_C0.json").write_text(json.dumps({"results": {"results": res}}))
+    pf = promptfoo.load_results(tmp_path)
+    assert pf["pf_success"].tolist() == [True, False, None]
+    runs = pd.DataFrame([{"kind": "attack", "config": "C0", "variant": f"S1-s{i}-none", "attack_success": ok}
+                         for i, ok in enumerate([True, True, False])])
+    agr = report.agreement(runs, pf)
+    assert agr.loc["C0"].tolist() == [2, 2, 1, 1]  # el error se excluye; S1-s1-none discrepa
+    assert agr.attrs["discrepancias"] == ["C0 S1-s1-none"]
+    report.agreement_latex(agr, tmp_path / "pf.tex")
+    assert "C0 & 2 & 2 & 1 & 1" in (tmp_path / "pf.tex").read_text()

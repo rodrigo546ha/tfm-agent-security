@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pandas as pd
 
+from tfm_lab.eval.promptfoo import load_results as load_promptfoo
 from tfm_lab.settings import load_settings
 
 # Nombres para la tabla LaTeX: "---" en vez de la raya Unicode, que tectonic (XeTeX) no representa con lmodern T1.
@@ -226,6 +227,29 @@ def attribution_latex(att: pd.DataFrame, out: Path) -> None:
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+def agreement(df: pd.DataFrame, pf: pd.DataFrame) -> pd.DataFrame:
+    """Compara, variante a variante, el veredicto del detector propio con el de promptfoo (segunda fuente).
+    Las ejecuciones con error en cualquiera de las dos fuentes se excluyen."""
+    atk = df[df["kind"] == "attack"][["config", "variant", "attack_success"]]
+    m = atk.merge(pf, on=["config", "variant"]).dropna(subset=["attack_success", "pf_success"])
+    m["det"], m["pf"] = m["attack_success"].astype(bool), m["pf_success"].astype(bool)
+    m["coinciden"] = m["det"] == m["pf"]
+    out = m.groupby("config").agg(n=("det", "size"), det=("det", "sum"), pf=("pf", "sum"),
+                                  coinciden=("coinciden", "sum")).astype(int)
+    out.attrs["discrepancias"] = [f"{c} {v}" for c, v in m.loc[~m["coinciden"], ["config", "variant"]].itertuples(
+        index=False)]
+    return out
+
+
+def agreement_latex(agr: pd.DataFrame, out: Path) -> None:
+    lines = [r"\begin{tabular}{lcccc}", r"\toprule",
+             r"Configuración & Variantes & Éxitos (detector) & Éxitos (promptfoo) & Coinciden \\", r"\midrule"]
+    lines += [f"{cfg} & {r.n} & {r.det} & {r.pf} & {r.coinciden} \\\\" for cfg, r in agr.iterrows()]
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def main() -> None:
     s = load_settings()
     results = s.path("results")
@@ -260,6 +284,15 @@ def main() -> None:
         print(att.to_string())
         attribution_latex(att, s.root / "memoria" / "tablas" / "atribucion.tex")
         extra += " · memoria/tablas/atribucion.tex"
+    pf = load_promptfoo(results)
+    if not pf.empty:
+        agr = agreement(df, pf)
+        print("\n=== S1: detector propio frente a promptfoo ===")
+        print(agr.to_string())
+        if agr.attrs["discrepancias"]:
+            print("AVISO: veredictos distintos en " + ", ".join(agr.attrs["discrepancias"]))
+        agreement_latex(agr, s.root / "memoria" / "tablas" / "promptfoo.tex")
+        extra += " · memoria/tablas/promptfoo.tex"
     extra += " · memoria/tablas/benignas.tex" if not util.empty else ""
     print(f"\n-> {results / 'asr.csv'} · {results / 'asr.png'} · memoria/tablas/asr.tex{extra}")
 
