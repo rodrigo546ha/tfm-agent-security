@@ -21,6 +21,7 @@ def lab(tmp_path_factory):
         "canaries": str(base / "canaries.json"),
         "web": str(base / "web"),
         "results": str(base / "results"),
+        "replica": str(base / "replica"),
         "policy": s.raw["paths"]["policy"],
         "tool_manifest": str(base / "tool_manifest.json"),
     }

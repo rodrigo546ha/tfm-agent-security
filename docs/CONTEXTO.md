@@ -4,7 +4,7 @@ Léelo al empezar cada sesión. Al terminarla, actualiza **Estado actual** y **P
 de horas a `CHANGELOG.md`). Este fichero es la memoria compartida entre sesiones: si no está aquí, la siguiente
 sesión no lo sabrá.
 
-Última actualización: 2026-11-02.
+Última actualización: 2026-11-03.
 
 ---
 
@@ -105,9 +105,9 @@ riesgo del Anexo III aplazado a dic 2027 por el Reglamento (UE) 2026/1744).
 
 ---
 
-## 5. Estado actual (2026-11-02)
+## 5. Estado actual (2026-11-03)
 
-- Repo en GitHub (`rodrigo546ha/tfm-agent-security`), 44 tests en verde, CI activo (ruff, `sigma check` y tests).
+- Repo en GitHub (`rodrigo546ha/tfm-agent-security`), 45 tests en verde, CI activo (ruff, `sigma check` y tests).
 - Ollama y `qwen3:8b` instalados; guardrail descargado. `model.digest` fijado en `config/lab.yaml`; `num_ctx` 8192
   llega a Ollama (comprobado con `ollama ps`); `num_predict: 1024` corta bucles de generación (columna `truncated`).
 - Tareas benignas con oráculo: `benign_ok` + `benign_reason` en `runs.jsonl`; `make report` saca la tabla de
@@ -126,6 +126,18 @@ riesgo del Anexo III aplazado a dic 2027 por el Reglamento (UE) 2026/1744).
   La latencia NO es reproducible: en la campaña del 1-2 nov otro proceso cargó la máquina durante las benignas de
   C0 (B-26 a B-31 entre 150 y 650 s) y la media de C0 subió a 24 s; se repitió vigilando `ollama ps` cada 30 s
   (solo `qwen3:8b` cargado). No lanzar campañas con el otro proyecto (`housefinder.jobs`) usando Ollama.
+- **Prueba pareada (3 nov):** `make report` saca `tablas/mcnemar.tex` (McNemar exacta + Holm sobre las mismas
+  variantes). qwen3:8b: C0-C1 8 frente a 0 discordantes, p = 0,008; C0-C2 y C1-C2 p < 0,001. Es lo que respalda
+  "el guardrail aporta poco pero no es ruido" (capítulo 8); los intervalos de Wilson por separado se solapan.
+- **Réplica con llama3.1:8b (3 nov):** `make replica` (49 min, sin errores; `results/replica/`, con
+  `campaign.json`). ASR C0/C1/C2 global 38/31/0 %; S2 10 % en C0 (qwen 45 %), S3 38 %, S4 47 % pero sin
+  ningún canario filtrado (solo egress externo). C0-C1 no significativa (6 frente a 1, p = 0,125); la variante
+  `S3-s3-authority` tiene éxito en C1 y no en C0 porque el guardrail retira la herramienta y el agente consulta una
+  API de divisas externa (efecto colateral; la allowlist lo para en C2). llama no decodifica base64: manda la
+  carga a un "decodificador" externo. **Utilidad 36/50 en las tres configuraciones (< 90 %)**: falla casi siempre
+  las plantillas 2 (se niega a dar el importe "por confidencial"), 5 (resumen vacío de la web) y 6 (correo sin leer
+  el contrato); el oráculo es correcto. Se usa solo como réplica y sin ajustar el prompt. Sección 8.3, tabla
+  `tablas/modelos.tex`. Cuerpo de la memoria ~17 caras (PDF 24 páginas).
 - **promptfoo como segunda fuente de S1** (2 nov): `make promptfoo` genera 20 pruebas desde `scenarios.py` (una
   aserción por criterio de éxito), sirve el agente con `campaign._agent` (antes `serve_agent.py` creaba C2 sin
   los secretos del DLP) y ejecuta `promptfoo@0.125.1` con `-j 1`, sin caché ni telemetría. Concordancia con el
@@ -213,10 +225,12 @@ por la GPU, 9 herramientas, controles finales y estado de las reglas de detecci�
    debe listar semillas y mutadores (el capítulo 6 remite a él).
 4. Revisar los capítulos 8 y 10 (redactados el 2 nov).
    Al redactar el 2, la frase sobre promptfoo como segunda fuente ya está respaldada (capítulo 5 y anexo C).
-5. Reglas Sigma: hechas (anexo C). Pendiente solo la correlación por usuario de R2 (trabajo futuro).
-6. Memoria: las diferencias con la propuesta ya están explicadas (capítulo 5: Docker, herramientas, telemetría;
+5. Réplica y prueba pareada hechas (3 nov). Si se quiere un tercer modelo, debe superar el umbral de utilidad
+   en C0; `qwen3:14b` está instalado (lo usa `housefinder`), no probado aquí.
+6. Reglas Sigma: hechas (anexo C). Pendiente solo la correlación por usuario de R2 (trabajo futuro).
+7. Memoria: las diferencias con la propuesta ya están explicadas (capítulo 5: Docker, herramientas, telemetría;
    capítulo 7: controles). El 9 debe tratar la telemetría como base de detección (el 7 remite a él).
-7. Recopilar fuentes del estado del arte en `referencias.bib` a medida que se redacta el capítulo 2.
+8. Recopilar fuentes del estado del arte en `referencias.bib` a medida que se redacta el capítulo 2.
 
 ---
 

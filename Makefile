@@ -1,4 +1,4 @@
-.PHONY: help check setup data manifest campaign campaign-fast promptfoo report chat test lint clean model-digest reproduce memoria memoria-figs
+.PHONY: help check setup data manifest campaign campaign-fast replica promptfoo report chat test lint clean model-digest reproduce memoria memoria-figs
 
 PY ?= uv run python
 export PYTHONPATH := src
@@ -22,6 +22,12 @@ campaign: check data manifest  ## Ejecuta la campaña completa (C0/C1/C2 × S1-S
 
 campaign-fast: check data manifest  ## Campaña rápida de humo (S1 y S4, C0 y C2)
 	$(PY) -m tfm_lab.cli campaign --configs C0 C2 --scenarios S1 S4
+
+REPLICA_MODEL ?= llama3.1:8b
+
+replica: data manifest  ## Réplica de la campaña completa con otro modelo en results/replica/ (~1 h)
+	TFM_MODEL=$(REPLICA_MODEL) $(PY) -m tfm_lab.cli check
+	TFM_MODEL=$(REPLICA_MODEL) $(PY) -m tfm_lab.cli campaign --replica
 
 check:  ## Comprueba Ollama, modelo y guardrail antes de una campaña
 	$(PY) -m tfm_lab.cli check

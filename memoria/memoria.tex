@@ -82,7 +82,7 @@ seguridad de referencia} para este tipo de agentes, construida a partir de un mo
 cuatro escenarios de ataque bajo tres configuraciones de control y se mide la tasa de éxito de ataque (ASR)
 mediante detección determinista por canarios, junto con las tareas legítimas bloqueadas y completadas y la
 latencia.
-Los resultados cuantifican la reducción de riesgo aportada por cada control y se sintetizan en un plano de
+Los resultados, replicados con un segundo modelo, cuantifican la reducción de riesgo aportada por cada control y se sintetizan en un plano de
 gobierno alineado con el marco regulatorio aplicable.
 
 \vspace{0.3cm}
@@ -304,6 +304,10 @@ base no sería interpretable, porque el modelo tampoco sabría usar las herramie
 \qquad z = 1{,}96,
 \]
 preferible al intervalo de Wald con muestras de 14 a 50 casos y proporciones cercanas a 0 o a 1~\cite{brown2001}.
+Como las tres configuraciones se prueban con las mismas variantes, la diferencia entre dos de ellas se contrasta
+además con la prueba exacta de McNemar~\cite{mcnemar1947}, que solo usa las variantes en las que discrepan, con
+la corrección de Holm~\cite{holm1979} para las tres comparaciones; los intervalos de cada configuración por
+separado ignoran ese emparejamiento y son más conservadores.
 
 \textbf{Errores.} Un fallo del modelo o del entorno no cuenta como ataque fallido: la ejecución se excluye de
 las métricas y la campaña se detiene tras tres errores seguidos. Una respuesta cortada por el límite de tokens sí
@@ -454,7 +458,9 @@ El equipo es un Mac con procesador Apple M5 y 16\,GB de memoria. El modelo objet
 servido por Ollama de forma nativa para aprovechar la GPU del procesador. Se invoca con temperatura 0,
 semilla 42, contexto de 8192 tokens, razonamiento desactivado y un máximo de 1024 tokens por respuesta, y se
 identifica por su \emph{digest} en la configuración, de modo que una actualización del modelo no cambia los
-resultados sin dejar rastro. El guardrail es \emph{Llama Prompt Guard 2} de 86 millones de
+resultados sin dejar rastro. La campaña completa se repite con \texttt{llama3.1:8b} y los mismos parámetros
+como réplica (sección~\ref{sec:validacion}); cada campaña guarda el modelo y su \emph{digest} junto a los
+resultados. El guardrail es \emph{Llama Prompt Guard 2} de 86 millones de
 parámetros~\cite{prompt_guard2}, que se ejecuta en CPU con un umbral de 0,5 sobre la probabilidad de
 inyección.
 
@@ -723,8 +729,16 @@ base64: contra un modelo capaz de decodificarlas, esas cargas solo encontrarían
 
 \textbf{La arquitectura completa casi elimina el riesgo.} C2 reduce el ASR a cero en S1, S3 y S4 y deja dos
 éxitos en S2. Con 14 a 20 variantes por escenario los intervalos son anchos: los de C0 y C2 no se solapan en S1
-ni en S4, pero sí en S2 y S3, y los de C0 y C1 se solapan en todos. En el agregado de los cuatro escenarios la
-diferencia entre C0 y C2 es clara y la de C0 y C1 no lo es.
+ni en S4, pero sí en S2 y S3, y los de C0 y C1 se solapan en todos. La comparación pareada sobre el conjunto de
+las variantes (tabla~\ref{tab:mcnemar}) sí separa las tres configuraciones con qwen3:8b: ninguna variante tiene éxito
+con más controles y no sin ellos, de modo que todas las discrepancias van en el mismo sentido. El guardrail aporta
+poco, pero esa aportación no es ruido; la de C2 frente a C1 es mucho mayor.
+
+\begin{table}[h]\centering\footnotesize
+\caption{Comparaciones pareadas entre configuraciones sobre las mismas variantes: prueba exacta de McNemar y
+corrección de Holm. Generada por \texttt{make report}.}\label{tab:mcnemar}
+\IfFileExists{tablas/mcnemar.tex}{\input{tablas/mcnemar.tex}}{\emph{Ejecuta \texttt{make report}}}
+\end{table}
 
 \begin{table}[h]\centering\footnotesize
 \caption{Controles que intervienen en las variantes con éxito en C0 (un ataque puede activar varios) y variantes
@@ -750,6 +764,39 @@ una herramienta prohibida para el escenario. Es el caso que justifica la defensa
 control falla, el agente queda desviado y otros dos controles contienen el impacto. Se ha optado por informarlos
 como éxito y no por quitar la herramienta del rol tras ver el resultado, porque ajustar los controles al conjunto
 de prueba invalidaría la comparación.
+
+\subsection{Réplica con un segundo modelo}
+Para comprobar que el efecto de los controles no es propio de qwen3:8b, la campaña completa se repitió con
+llama3.1:8b sin cambiar nada más: mismas variantes, controles, parámetros y prompt (tabla~\ref{tab:modelos}; el
+\emph{digest} de cada modelo queda en el \texttt{campaign.json} de su campaña).
+
+\begin{table}[h]\centering\footnotesize
+\caption{ASR por escenario, éxitos en los que sale un canario y tareas legítimas completadas con cada modelo.
+Generada por \texttt{make report}.}\label{tab:modelos}
+\IfFileExists{tablas/modelos.tex}{\input{tablas/modelos.tex}}{\emph{Ejecuta \texttt{make report}}}
+\end{table}
+
+\textbf{La conclusión principal se replica.} Con los dos modelos C2 reduce los éxitos casi a cero, la diferencia
+con C0 y con C1 es significativa en la prueba pareada y los controles no cambian las tareas legítimas que se
+completan. La aportación del guardrail solo, en cambio, no se distingue del azar con llama3.1:8b. La única
+variante que tiene éxito en C1 y no en C0 muestra un efecto colateral: el guardrail descarta la descripción
+envenenada de \texttt{convertir\_divisa}, y el agente, para cumplir la tarea legítima, consulta una API de divisas
+externa. Retirar una herramienta sin limitar la salida a red desplaza el riesgo en lugar de eliminarlo; en C2 la
+allowlist lo para.
+
+\textbf{El perfil de vulnerabilidad depende del modelo.} llama3.1:8b obedece mucho menos las instrucciones
+incrustadas en los contratos (S2) y algo más las descripciones envenenadas (S3), y sus éxitos son menos graves:
+en S4 se desvía hacia hosts externos, pero no llega a enviar el secreto. Tampoco decodifica base64: envía la carga
+a un servicio externo para que la decodifique, lo que el criterio estricto cuenta como salida no confiable. Por
+tanto, el ASR de la línea base no se puede extrapolar de un modelo a otro; lo que se replica es el efecto
+relativo de los controles.
+
+\textbf{llama3.1:8b no supera el umbral de utilidad.} Falla casi siempre en tres de las diez plantillas legítimas sin
+que intervenga ningún control: tras leer el contrato se niega a dar el importe por considerarlo confidencial,
+devuelve un resumen vacío de la intranet y envía el correo sin leer el contrato. Según el criterio de la
+sección~\ref{sec:metodo}, su ASR de C0 no es plenamente interpretable, porque parte de los ataques fracasan por la
+misma incapacidad. Por eso se usa como réplica y no como resultado principal, y no se ajustó el prompt para él:
+cambiaría el sistema medido.
 
 \subsection{Coste en utilidad y latencia}
 \begin{table}[h]\centering\footnotesize
@@ -839,7 +886,8 @@ AI RMF.
 \textbf{Respuesta a la pregunta de investigación.} Un clasificador de inyecciones por sí solo reduce poco el
 riesgo: actúa cuando la carga tiene forma de inyección, pero no ve las peticiones que parecen una operación
 normal, como enviar una credencial a un proveedor, ni las cargas codificadas. La arquitectura completa casi
-elimina los ataques medidos sin bloquear ninguna tarea legítima y con una latencia del mismo orden. La mayor
+elimina los ataques medidos sin bloquear ninguna tarea legítima y con una latencia del mismo orden, y el resultado se repite con un segundo
+modelo. La mayor
 parte de esa reducción procede de controles deterministas (mínimo privilegio, allowlist de salida, pinning de
 herramientas y DLP), que no necesitan reconocer la forma del ataque. Los dos éxitos residuales ilustran la
 defensa en profundidad: el agente queda desviado, pero el broker y la allowlist impiden que salga el secreto. La
@@ -848,8 +896,8 @@ hacer más que en detectar lo que se le dice. Con ello se cubren los objetivos O
 priorizado y mapeado a ATLAS y OWASP (sección~\ref{sec:threat}), una arquitectura de diez controles
 (sección~\ref{sec:arquitectura}) y su validación frente a una línea base (sección~\ref{sec:validacion}).
 
-\textbf{Limitaciones.} Se ha evaluado un único modelo de 8B que, además, no decodifica base64; contra un modelo
-más capaz esas variantes podrían prosperar y, como el guardrail no las detecta, solo las pararían los controles
+\textbf{Limitaciones.} Se han evaluado dos modelos de 8B, y el segundo solo como réplica porque no alcanza el
+umbral de utilidad. Ninguno decodifica base64; contra un modelo más capaz esas variantes podrían prosperar y, como el guardrail no las detecta, solo las pararían los controles
 de arquitectura. Con 14 a 20 variantes por escenario los intervalos son anchos, y por escenario la diferencia
 entre C0 y C2 solo es clara en S1 y S4. Los ataques son estáticos y los ha escrito el mismo autor que los
 controles: aunque estos no se ajustaron tras ver los resultados, no se ha medido un atacante adaptativo que
@@ -859,7 +907,7 @@ la calidad del resumen. La latencia es orientativa porque depende de la carga de
 herramientas y la salida a red son simuladas, cada tarea es una sola petición y el agente no tiene memoria
 persistente.
 
-\textbf{Trabajo futuro.} Repetir las campañas con otros modelos abiertos, incluidos modelos mayores que sí
+\textbf{Trabajo futuro.} Repetir las campañas con modelos mayores, que completen las tareas legítimas y sí
 decodifiquen las cargas ofuscadas; incorporar atacantes adaptativos y generadores externos de variantes como
 \texttt{garak}~\cite{garak}; añadir un quinto escenario con un servidor MCP real y otro con memoria persistente y
 conversaciones de varios turnos (ASI06); correlacionar las alertas por usuario y sesión, que el laboratorio no

@@ -1,6 +1,7 @@
 """Orquestador de la campaña: configuración (C0/C1/C2) × escenario × variante + 50 tareas benignas.
 
-Salidas en results/: runs.jsonl (una fila por intento), summary.csv y telemetry.jsonl.
+Salidas en results/ (o en results/replica/ con otro modelo): runs.jsonl (una fila por intento), summary.csv,
+telemetry.jsonl y campaign.json (modelo, digest y parámetros con que se generó).
 """
 
 from __future__ import annotations
@@ -139,10 +140,20 @@ def preflight(settings: LabSettings, configs: list[str]) -> str:
     return f"Ollama OK · modelo {m['name']} · guardrail {g['input_model'] if needs_guard else 'no requerido'}"
 
 
+def model_digest(settings: LabSettings) -> str | None:
+    """Digest del manifiesto del modelo en Ollama, para dejar constancia de qué pesos generaron la campaña."""
+    from ollama import Client
+    m = settings.model
+    return next((x.digest for x in Client(host=m["host"]).list().models
+                 if x.model in (m["name"], f"{m['name']}:latest")), None)
+
+
 def run_campaign(configs: list[str] | None = None, scenarios: list[str] | None = None,
-                 benign: bool = True, dry_run: bool = False, n_benign: int = 50) -> Path:
+                 benign: bool = True, dry_run: bool = False, n_benign: int = 50, replica: bool = False) -> Path:
+    """`replica=True` escribe en results/replica/: la misma campaña con otro modelo (TFM_MODEL), sin pisar la
+    principal, de la que salen las tablas de la memoria."""
     settings = load_settings()
-    results = settings.path("results")
+    results = settings.path("replica" if replica else "results")
     results.mkdir(parents=True, exist_ok=True)
     runs_path = results / "runs.jsonl"
     runs_path.write_text("", encoding="utf-8")
@@ -158,6 +169,11 @@ def run_campaign(configs: list[str] | None = None, scenarios: list[str] | None =
     tasks = benign_tasks(n_benign, clean)
     plan = {s.id: len(variants(s, settings)) for s in scens}
     print(f"Modelo: {llm.name} · variantes por escenario: {plan} · benignas: {len(tasks) if benign else 0}")
+    meta = {"model": llm.name, "digest": None if dry_run else model_digest(settings),
+            "think": settings.model.get("think"), "options": settings.model.get("options"),
+            "configs": cfgs, "scenarios": list(plan),
+            "started": time.strftime("%Y-%m-%dT%H:%M:%S")}
+    (results / "campaign.json").write_text(json.dumps(meta, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     rows: list[dict[str, Any]] = []
     t0 = time.time()

@@ -5,9 +5,18 @@ Sirve como bitácora de reproducibilidad y como control de las 45-60 h compromet
 
 Las horas desde el 31 oct son estimaciones a partir de la actividad registrada en la sesión de Claude Code
 (intervalos sin más de 20 min de inactividad); las campañas desatendidas no cuentan. Las de septiembre se
-estiman a partir de las horas de los commits. Acumulado estimado: ~11 h.
+estiman a partir de las horas de los commits. Acumulado estimado: ~12 h.
 
 ## [No publicado]
+### 2026-11-03 — Prueba pareada de McNemar y réplica con llama3.1:8b [~1h]
+- `make report` contrasta C0/C1/C2 sobre las mismas variantes con McNemar exacta y corrección de Holm
+  (`tablas/mcnemar.tex`). Con qwen3:8b, C0-C1 es significativa aunque sus intervalos de Wilson se solapen.
+  Fuentes McNemar 1947 (Crossref) y Holm 1979 (Wikidata/JSTOR).
+- `make replica`: la campaña completa con otro modelo (`TFM_MODEL`) en `results/replica/`, sin pisar la principal.
+  Cada campaña escribe `campaign.json` con modelo, digest y parámetros. Réplica con llama3.1:8b (49 min, 363 filas,
+  sin errores ni otro modelo en Ollama): C2 vuelve a dejar el ASR casi a cero sin coste en utilidad, pero llama
+  completa solo 36/50 benignas (por debajo del umbral) y C0-C1 no es significativa. `tablas/modelos.tex` con la
+  fila de éxitos con canario filtrado. Sección 8.3 nueva y capítulos 3, 5 y 10 ajustados. 45 tests.
 ### 2026-11-02 — Capítulos 1, 2, 8, 9 y 10, anexos, reglas Sigma, atribución, promptfoo [~6h]
 - `runs.jsonl` registra en `controls` qué controles intervienen en cada ejecución; `make report` genera
   `tablas/atribucion.tex` y `tablas/latencia.tex`. 41 tests.

@@ -6,12 +6,13 @@ memoria/tablas/benignas.tex (se incluyen directamente en la memoria).
 
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 
 import pandas as pd
 
-from tfm_lab.eval.anexos import corpus_latex, evidence_latex
+from tfm_lab.eval.anexos import corpus_latex, evidence_latex, tex
 from tfm_lab.eval.deteccion import alerts, detection_latex, detection_table, load_rules
 from tfm_lab.eval.promptfoo import load_results as load_promptfoo
 from tfm_lab.settings import load_settings
@@ -229,6 +230,89 @@ def attribution_latex(att: pd.DataFrame, out: Path) -> None:
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+PAIRS = [("C0", "C1"), ("C0", "C2"), ("C1", "C2")]
+
+
+def mcnemar_exact(b: int, c: int) -> float:
+    """p bilateral exacta de McNemar: binomial(b + c, 1/2) sobre los pares discordantes."""
+    n = b + c
+    if n == 0:
+        return 1.0
+    return min(1.0, 2 * sum(math.comb(n, i) for i in range(min(b, c) + 1)) / 2**n)
+
+
+def paired_tests(df: pd.DataFrame, pairs: list[tuple[str, str]] = PAIRS) -> pd.DataFrame:
+    """Compara configuraciones sobre las mismas variantes, que es como se diseñó la campaña: los intervalos de
+    Wilson de cada configuración por separado ignoran el emparejamiento. `solo_a`/`solo_b` son las variantes con
+    éxito solo en la primera o solo en la segunda. p ajustada por Holm dentro de la familia de comparaciones."""
+    atk = df[(df["kind"] == "attack") & df["attack_success"].notna()]
+    wide = atk.pivot(index="variant", columns="config", values="attack_success")
+    rows = []
+    for a, b in pairs:
+        if a not in wide or b not in wide:
+            continue
+        w = wide[[a, b]].dropna().astype(bool)  # sin error en ninguna de las dos
+        only_a, only_b = int((w[a] & ~w[b]).sum()), int((~w[a] & w[b]).sum())
+        rows.append({"comparacion": f"{a}--{b}", "pares": len(w), "solo_a": only_a, "solo_b": only_b,
+                     "p": mcnemar_exact(only_a, only_b)})
+    out = pd.DataFrame(rows, columns=["comparacion", "pares", "solo_a", "solo_b", "p"])
+    adj, running = {}, 0.0
+    for rank, (i, p) in enumerate(out["p"].sort_values().items()):
+        running = max(running, min(1.0, (len(out) - rank) * p))
+        adj[i] = running
+    out["p_holm"] = pd.Series(adj)
+    return out
+
+
+def _p(p: float) -> str:
+    return r"$<0{,}001$" if p < 0.001 else f"{p:.3f}".replace(".", "{,}")
+
+
+def paired_latex(tests: dict[str, pd.DataFrame], out: Path) -> None:
+    lines = [r"\begin{tabular}{llccccc}", r"\toprule",
+             r"Modelo & Comparación & Pares & Éxito solo en la 1.ª & Éxito solo en la 2.ª & $p$ exacta & $p$ (Holm) \\",
+             r"\midrule"]
+    for i, (model, t) in enumerate(tests.items()):
+        if i:
+            lines.append(r"\midrule")
+        lines += [f"{tex(model)} & {r.comparacion} & {r.pares} & {r.solo_a} & {r.solo_b} & {_p(r.p)} & "
+                  f"{_p(r.p_holm)} \\\\" for r in t.itertuples()]
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def model_name(results_dir: Path, default: str) -> str:
+    """Modelo que generó una campaña, según el campaign.json que escribe `run_campaign`."""
+    meta = results_dir / "campaign.json"
+    return json.loads(meta.read_text(encoding="utf-8"))["model"] if meta.exists() else default
+
+
+def models_latex(runs: dict[str, pd.DataFrame], out: Path) -> None:
+    """ASR por escenario y tareas completadas de cada modelo, en C0/C1/C2 (réplica con otro modelo)."""
+    cfgs = ["C0", "C1", "C2"]
+    lines = [r"\begin{tabular}{l" + "c" * len(cfgs) + "}", r"\toprule", "Escenario & " + " & ".join(cfgs) + r" \\"]
+    for model, df in runs.items():
+        long = asr_long(df).set_index(["scenario", "config"])
+        util = utility_table(df)
+        lines += [r"\midrule", rf"\multicolumn{{{len(cfgs) + 1}}}{{l}}{{\textbf{{{tex(model)}}}}} \\"]
+        for scen in [s for s in ("S1", "S2", "S3", "S4") if s in long.index.get_level_values(0)] + ["GLOBAL"]:
+            cells = [f"{long.loc[(scen, c), 'asr']:.0f} \\% ({long.loc[(scen, c), 'k']}/{long.loc[(scen, c), 'n']})"
+                     if (scen, c) in long.index else "--" for c in cfgs]
+            lines.append(f"{SCEN_NAMES.get(scen, 'Global')} & " + " & ".join(cells) + r" \\")
+        # Gravedad: éxitos en los que un canario sale en la respuesta o por egress, frente a solo desvío.
+        atk = df[(df["kind"] == "attack") & df["attack_success"].fillna(False).astype(bool)]
+        sig = atk["signals"] if "signals" in atk else pd.Series([[]] * len(atk), index=atk.index)
+        leak = atk[sig.apply(lambda s: isinstance(s, list) and any(x.startswith("canary") for x in s))]
+        cells = [f"{int((leak['config'] == c).sum())}/{int((atk['config'] == c).sum())}" for c in cfgs]
+        lines.append(r"\quad éxitos con canario filtrado & " + " & ".join(cells) + r" \\")
+        cells = [f"{util.loc[c, 'k']}/{util.loc[c, 'n']}" if c in util.index else "--" for c in cfgs]
+        lines.append("Benignas completadas & " + " & ".join(cells) + r" \\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def agreement(df: pd.DataFrame, pf: pd.DataFrame) -> pd.DataFrame:
     """Compara, variante a variante, el veredicto del detector propio con el de promptfoo (segunda fuente).
     Las ejecuciones con error en cualquiera de las dos fuentes se excluyen."""
@@ -286,6 +370,20 @@ def main() -> None:
         print(att.to_string())
         attribution_latex(att, s.root / "memoria" / "tablas" / "atribucion.tex")
         extra += " · memoria/tablas/atribucion.tex"
+    runs = {model_name(results, s.model["name"]): df}
+    if (s.path("replica") / "runs.jsonl").exists():
+        rep = model_name(s.path("replica"), "réplica")
+        runs[rep] = load_runs(s.path("replica"))
+        if warning := utility_warning(utility_table(runs[rep])):
+            print(f"\nRéplica con {rep}: {warning}")
+        models_latex(runs, s.root / "memoria" / "tablas" / "modelos.tex")
+        extra += " · memoria/tablas/modelos.tex"
+    tests = {model: paired_tests(d) for model, d in runs.items()}
+    for model, t in tests.items():
+        print(f"\n=== {model}: comparaciones pareadas (McNemar exacta, Holm) ===")
+        print(t.to_string(index=False))
+    paired_latex(tests, s.root / "memoria" / "tablas" / "mcnemar.tex")
+    extra += " · memoria/tablas/mcnemar.tex"
     pf = load_promptfoo(results)
     if not pf.empty:
         agr = agreement(df, pf)

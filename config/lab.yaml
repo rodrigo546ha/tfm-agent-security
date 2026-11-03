@@ -21,6 +21,7 @@ paths:
   canaries: data/generated/canaries.json
   web: data/web
   results: results
+  replica: results/replica   # misma campaña con otro modelo (make replica)
   policy: config/policy.yaml
   tool_manifest: config/tool_manifest.json
 

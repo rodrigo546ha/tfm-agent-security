@@ -169,3 +169,29 @@ def test_reglas_de_deteccion_sobre_telemetria(tmp_path):
                                        "exitos": 1, "exitos_alerta": 0, "benignas": 1, "benignas_alerta": 0}
     deteccion.detection_latex(tab, tmp_path / "det.tex")
     assert "C2 & 2 & 0 & 1 & 1 & 0/1 & 0/1" in (tmp_path / "det.tex").read_text()
+
+
+def test_comparaciones_pareadas_y_tabla_de_modelos(tmp_path):
+    import pandas as pd
+    assert report.mcnemar_exact(8, 0) == 2 / 2**8
+    assert report.mcnemar_exact(0, 0) == 1.0 and report.mcnemar_exact(3, 3) == 1.0
+    rows = []
+    # 10 variantes: C0 tiene éxito en 6, C1 en 4 (las 2 que pierde las frena el guardrail), C2 en ninguna; la v9
+    # tiene error en C1 y sale de la comparación C0-C1 y C1-C2, pero no de C0-C2.
+    for i in range(10):
+        for cfg, ok in (("C0", i < 6), ("C1", i < 4), ("C2", False)):
+            rows.append({"kind": "attack", "config": cfg, "scenario": "S1", "variant": f"v{i}",
+                         "attack_success": None if (cfg == "C1" and i == 9) else ok})
+    for cfg in ("C0", "C1", "C2"):
+        rows.append({"kind": "benign", "config": cfg, "scenario": "BENIGN", "variant": "B-00",
+                     "attack_success": None, "benign_ok": True, "benign_blocked": False})
+    df = pd.DataFrame(rows)
+    t = report.paired_tests(df).set_index("comparacion")
+    assert t.loc["C0--C1", ["pares", "solo_a", "solo_b"]].tolist() == [9, 2, 0]
+    assert t.loc["C0--C2", ["pares", "solo_a", "solo_b"]].tolist() == [10, 6, 0]
+    assert (t["p_holm"] >= t["p"]).all() and t.loc["C0--C2", "p_holm"] == 3 * t.loc["C0--C2", "p"]
+    report.paired_latex({"qwen3:8b": t.reset_index()}, tmp_path / "mcnemar.tex")
+    assert "C0--C1 & 9 & 2 & 0" in (tmp_path / "mcnemar.tex").read_text(encoding="utf-8")
+    report.models_latex({"qwen3:8b": df, "llama3.1:8b": df}, tmp_path / "modelos.tex")
+    out = (tmp_path / "modelos.tex").read_text(encoding="utf-8")
+    assert out.count("Benignas completadas & 1/1 & 1/1 & 1/1") == 2 and "60 \\% (6/10)" in out

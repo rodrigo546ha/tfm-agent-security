@@ -18,6 +18,7 @@ def main(argv: list[str] | None = None) -> int:
     pc.add_argument("--scenarios", nargs="*", default=None, help="S1 S2 S3 S4")
     pc.add_argument("--no-benign", action="store_true")
     pc.add_argument("--dry-run", action="store_true", help="Sin modelo (backend scripted): valida el pipeline.")
+    pc.add_argument("--replica", action="store_true", help="Escribe en results/replica/ (réplica con TFM_MODEL).")
 
     sub.add_parser("report", help="Genera tablas y gráficas de ASR desde results/.")
     sub.add_parser("promptfoo-tests", help="Genera las pruebas de S1 para promptfoo (segunda fuente de medida).")
@@ -46,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
         from tfm_lab.eval.campaign import PreflightError, run_campaign
         try:
             run_campaign(configs=args.configs, scenarios=args.scenarios,
-                         benign=not args.no_benign, dry_run=args.dry_run)
+                         benign=not args.no_benign, dry_run=args.dry_run, replica=args.replica)
         except PreflightError as exc:
             print(f"✗ {exc}")
             return 1

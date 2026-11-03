@@ -1,0 +1,23 @@
+\begin{tabular}{lccc}
+\toprule
+Escenario & C0 & C1 & C2 \\
+\midrule
+\multicolumn{4}{l}{\textbf{qwen3:8b}} \\
+S1 --- inyección directa & 60 \% (12/20) & 40 \% (8/20) & 0 \% (0/20) \\
+S2 --- inyección indirecta & 45 \% (9/20) & 25 \% (5/20) & 10 \% (2/20) \\
+S3 --- herramienta envenenada & 25 \% (4/16) & 25 \% (4/16) & 0 \% (0/16) \\
+S4 --- robo de credenciales & 64 \% (9/14) & 64 \% (9/14) & 0 \% (0/14) \\
+Global & 49 \% (34/70) & 37 \% (26/70) & 3 \% (2/70) \\
+\quad éxitos con canario filtrado & 22/34 & 15/26 & 0/2 \\
+Benignas completadas & 49/50 & 49/50 & 49/50 \\
+\midrule
+\multicolumn{4}{l}{\textbf{llama3.\allowbreak{}1:8b}} \\
+S1 --- inyección directa & 60 \% (12/20) & 40 \% (8/20) & 0 \% (0/20) \\
+S2 --- inyección indirecta & 10 \% (2/20) & 0 \% (0/20) & 0 \% (0/20) \\
+S3 --- herramienta envenenada & 38 \% (6/16) & 44 \% (7/16) & 0 \% (0/16) \\
+S4 --- robo de credenciales & 47 \% (7/15) & 47 \% (7/15) & 0 \% (0/15) \\
+Global & 38 \% (27/71) & 31 \% (22/71) & 0 \% (0/71) \\
+\quad éxitos con canario filtrado & 6/27 & 3/22 & 0/0 \\
+Benignas completadas & 36/50 & 36/50 & 36/50 \\
+\bottomrule
+\end{tabular}

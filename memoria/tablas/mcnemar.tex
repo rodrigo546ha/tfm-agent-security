@@ -1,0 +1,13 @@
+\begin{tabular}{llccccc}
+\toprule
+Modelo & Comparación & Pares & Éxito solo en la 1.ª & Éxito solo en la 2.ª & $p$ exacta & $p$ (Holm) \\
+\midrule
+qwen3:8b & C0--C1 & 70 & 8 & 0 & 0{,}008 & 0{,}008 \\
+qwen3:8b & C0--C2 & 70 & 32 & 0 & $<0{,}001$ & $<0{,}001$ \\
+qwen3:8b & C1--C2 & 70 & 24 & 0 & $<0{,}001$ & $<0{,}001$ \\
+\midrule
+llama3.\allowbreak{}1:8b & C0--C1 & 71 & 6 & 1 & 0{,}125 & 0{,}125 \\
+llama3.\allowbreak{}1:8b & C0--C2 & 71 & 27 & 0 & $<0{,}001$ & $<0{,}001$ \\
+llama3.\allowbreak{}1:8b & C1--C2 & 71 & 22 & 0 & $<0{,}001$ & $<0{,}001$ \\
+\bottomrule
+\end{tabular}
